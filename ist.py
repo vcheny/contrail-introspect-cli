@@ -693,10 +693,6 @@ class vRouter_CLI(Contrail_CLI):
         parser_acl.add_argument('uuid', nargs='?', default='', help='ACL uuid')
         parser_acl.set_defaults(func=self.SnhAcl)
 
-        parser_trace = self.subparser.add_parser('trace', help='Show Sandesh trace buffer')
-        parser_trace.add_argument('name', nargs='?', default='list', help='Trace buffer name, default: list available buffer names')
-        parser_trace.set_defaults(func=self.SnhTrace)
-
         parser_xmpp = self.subparser.add_parser('xmpp', help='Show Agent XMPP connections (route&config) status')
         parser_xmpp.add_argument('-d', action="store_true", help='Show Agent XMPP connection details')
         parser_xmpp.set_defaults(func=self.SnhXmpp)
@@ -815,15 +811,6 @@ class vRouter_CLI(Contrail_CLI):
         IST = Introspec(host=args.host, port=args.port)
         IST.get(path)
         IST.showRoute_VR(xpath, args.family, destination, mode)
-
-    def SnhTrace(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        if args.name == "list":
-            IST.get('Snh_SandeshTraceBufferListRequest')
-            IST.printText('//trace_buf_name')
-        else:
-            IST.get('Snh_SandeshTraceRequest?x=' + str(args.name))
-            IST.printText('//element')
 
     def SnhXmpp(self, args):
         IST = Introspec(host=args.host, port=args.port)
