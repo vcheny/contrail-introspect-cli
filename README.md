@@ -3,6 +3,8 @@ This script provides a Contrail CLI command mainly for troublelshooting prupose.
 
 Contrail 2.22+ is supported.
 
+Note: Entire scripts is kept in one single file intentionally for easy use. 
+
 ## How to run
 * Just like a regular pythoin script
 * It can run remotely or directly from control/compute nodes
