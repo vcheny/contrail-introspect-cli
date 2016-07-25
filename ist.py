@@ -943,34 +943,69 @@ class vRouter_CLI(Contrail_CLI):
         self.IST.printText("//MetadataResponse/*")
 
 class Collector_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8089'
+    
+    def __init__(self, parser, host, port):
+        
+        IShost = 'localhost' if host is None else host
+        ISport ='8089' if port is None else port
+        
         Contrail_CLI.__init__(self, parser, IShost, ISport) 
+
+        self.parse_args()
+
+    def parse_args(self):
+        parser_svr = self.subparser.add_parser('server', help='Show collector server info')
+        parser_svr.add_argument('type', nargs='?', choices=['stats', 'generators', 'all'], default='all', help='stats|connection|all')
+        parser_svr.set_defaults(func=self.SnhShowCollectorServerReq)
+
+        parser_redis = self.subparser.add_parser('redis', help='Show redis server UVE info')
+        parser_redis.set_defaults(func=self.SnhRedisUVERequest)
+
+    def SnhShowCollectorServerReq(self, args):
+        self.IST.get('Snh_ShowCollectorServerReq')
+        if args.type == 'stats':
+            self.IST.printText("/ShowCollectorServerResp/rx_socket_stats")
+            self.IST.printText("/ShowCollectorServerResp/tx_socket_stats")
+            self.IST.printText("/ShowCollectorServerResp/stats")
+            self.IST.printText("/ShowCollectorServerResp/cql_metrics")
+        elif args.type == "generators":
+            self.IST.printTbl("//GeneratorSummaryInfo")
+        else:
+            self.IST.printText("/ShowCollectorServerResp/rx_socket_stats")
+            self.IST.printText("/ShowCollectorServerResp/tx_socket_stats")
+            self.IST.printText("/ShowCollectorServerResp/stats")
+            self.IST.printText("/ShowCollectorServerResp/cql_metrics")
+            self.IST.printTbl("//GeneratorSummaryInfo")
+
+    def SnhRedisUVERequest(self, args):
+        self.IST.get('Snh_RedisUVERequest')
+        self.IST.printText("//RedisUveInfo/*")
 
 class Analytics_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8090'
+    def __init__(self, parser, host, port):
+
+        IShost = 'localhost' if host is None else host
+        ISport ='8090' if port is None else port
+        
         Contrail_CLI.__init__(self, parser, IShost, ISport) 
 
-class Query_Engine_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8091'
-        Contrail_CLI.__init__(self, parser, IShost, ISport) 
+# class Query_Engine_CLI(Contrail_CLI):
+#     def __init__(self, parser):
+#         IShost ='localhost'
+#         ISport ='8091'
+#         Contrail_CLI.__init__(self, parser, IShost, ISport) 
 
-class Device_Manager_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8096'
-        Contrail_CLI.__init__(self, parser, IShost, ISport) 
+# class Device_Manager_CLI(Contrail_CLI):
+#     def __init__(self, parser):
+#         IShost ='localhost'
+#         ISport ='8096'
+#         Contrail_CLI.__init__(self, parser, IShost, ISport) 
 
-class Discovery_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='5997'
-        Contrail_CLI.__init__(self, parser, IShost, ISport) 
+# class Discovery_CLI(Contrail_CLI):
+#     def __init__(self, parser):
+#         IShost ='localhost'
+#         ISport ='5997'
+#         Contrail_CLI.__init__(self, parser, IShost, ISport) 
 
 # Modules for contrail-analytics-nodemgr
 # http://10.85.19.196:8104
@@ -1062,12 +1097,11 @@ def main():
     parse_cfg_svc = roleparsers.add_parser('cfg-svc', help='Show contrail-svc-monitor info')
     Config_SVC_CLI(parse_cfg_svc, host, port)
 
+    parse_collector = roleparsers.add_parser('collector', help='Show contrail-collector info')
+    Collector_CLI(parse_collector, host, port)
 
-    # parse_collector = roleparsers.add_parser('collector', help='Show contrail-collector info')
-    # Collector_CLI(parse_collector)
-
-    # parse_analytics = roleparsers.add_parser('analytics', help='Show contrail-analytics-api info')
-    # Analytics_CLI(parse_analytics)
+    parse_analytics = roleparsers.add_parser('analytics', help='Show contrail-analytics-api info')
+    Analytics_CLI(parse_analytics, host, port)
 
     # parse_qe = roleparsers.add_parser('qe', help='Show contrail-query-engine info')
     # Query_Engine_CLI(parse_qe)
