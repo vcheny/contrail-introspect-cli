@@ -402,6 +402,9 @@ class Contrail_CLI:
         parser_status.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
         parser_status.set_defaults(func=self.SnhNodeStatus)
 
+        parser_cpu = self.subparser.add_parser('cpu', help='Show CPU load info')  
+        parser_cpu.set_defaults(func=self.SnhCpuLoadInfo)
+
         parser_trace = self.subparser.add_parser('trace', help='Show Sandesh trace buffer')
         parser_trace.add_argument('name', nargs='?', default='list', help='Trace buffer name, default: list available buffer names')
         parser_trace.set_defaults(func=self.SnhTrace)
@@ -420,6 +423,10 @@ class Contrail_CLI:
             self.IST.printText('//ProcessStatus/description')
             print 'Connetion Info:'
             self.IST.printTbl('//ConnectionInfo')
+
+    def SnhCpuLoadInfo(self, args):
+        self.IST.get('Snh_CpuLoadInfoReq')
+        self.IST.printText("//CpuLoadInfo/*")
 
     def SnhTrace(self, args):
         if args.name == "list":
@@ -559,9 +566,6 @@ class Control_CLI(Contrail_CLI):
         parser_route.add_argument('-t', '--table', default='', help='Show routes in given table')
         parser_route.set_defaults(func=self.SnhShowRoute)
 
-        parser_cpu = self.subparser.add_parser('cpu', help='Show CPU load info')  
-        parser_cpu.set_defaults(func=self.SnhCpuLoadInfo)
-
         ## XMPP
         parser_sub = self.subparser.add_parser('xmpp', help='Show XMPP info')
         parser_xmpp = parser_sub.add_subparsers()
@@ -656,10 +660,6 @@ class Control_CLI(Contrail_CLI):
     def SnhXmppConn(self, args):
         self.IST.get('Snh_ShowXmppConnectionReq')
         self.IST.printTbl('//ShowXmppConnection')
-
-    def SnhCpuLoadInfo(self, args):
-        self.IST.get('Snh_CpuLoadInfoReq')
-        self.IST.printText("//CpuLoadInfo/*")
 
     def SnhBgpNeighbor(self, args):
         self.IST.get('Snh_BgpNeighborReq?search_string=' + str(args.name))
