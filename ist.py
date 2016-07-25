@@ -387,15 +387,14 @@ class Introspec:
                 for route in sc.xpath('.//ExtConnectRouteInfo/ext_rt_svc_rt/ShowRoute'):
                     print self.routeToStr(indent, route, 'detail')
 
-                print "aggregate_enable:%s\n" % (sc.find("aggregate_enable").text)
-                
+                print "aggregate_enable:%s\n" % (sc.find("aggregate_enable").text)            
 
 class Contrail_CLI:
 
-    def __init__(self, parser, default_host, default_port):
+    def __init__(self, parser, host, port):
 
-        parser.add_argument('-H', '--host', default=default_host, help="Config node Introspect host, default: " + default_host)
-        parser.add_argument('-p', '--port', default=default_port, help="Config node Introspect port, default: " + default_port)
+        parser.add_argument('-H', '--host', default=host, help="Introspect host(default='%(default)s')")
+        parser.add_argument('-p', '--port', default=port, help="Introspect port(default='%(default)s')")
         self.subparser = parser.add_subparsers()
 
         parser_status = self.subparser.add_parser('status', help='show node/component status')
@@ -410,58 +409,71 @@ class Contrail_CLI:
         parser_uve.add_argument('name', nargs='?', default='list', help='UVE type name, default: list available type names')
         parser_uve.set_defaults(func=self.SnhUve)
 
+        self.IST = Introspec(host, port)
+
     def SnhNodeStatus(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_SandeshUVECacheReq?tname=NodeStatus')
-        IST.printText('//ProcessStatus/module_id')
-        IST.printText('//ProcessStatus/state')
+        self.IST.get('Snh_SandeshUVECacheReq?tname=NodeStatus')
+        self.IST.printText('//ProcessStatus/module_id')
+        self.IST.printText('//ProcessStatus/state')
         if args.detail:
-            IST.printText('//ProcessStatus/description')
+            self.IST.printText('//ProcessStatus/description')
             print 'Connetion Info:'
-            IST.printTbl('//ConnectionInfo')
+            self.IST.printTbl('//ConnectionInfo')
 
     def SnhTrace(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         if args.name == "list":
-            IST.get('Snh_SandeshTraceBufferListRequest')
-            IST.printText('//trace_buf_name')
+            self.IST.get('Snh_SandeshTraceBufferListRequest')
+            self.IST.printText('//trace_buf_name')
         else:
-            IST.get('Snh_SandeshTraceRequest?x=' + str(args.name))
-            IST.printText('//element')
+            self.IST.get('Snh_SandeshTraceRequest?x=' + str(args.name))
+            self.IST.printText('//element')
 
     def SnhUve(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         if args.name == "list":
-            IST.get('Snh_SandeshUVETypesReq')
-            IST.printText('//type_name')
+            self.IST.get('Snh_SandeshUVETypesReq')
+            self.IST.printText('//type_name')
         else:
-            IST.get('Snh_SandeshUVECacheReq?x=' + str(args.name))
-            IST.printText('//*[@type="sandesh"]/data/*') 
+            self.IST.get('Snh_SandeshUVECacheReq?x=' + str(args.name))
+            self.IST.printText('//*[@type="sandesh"]/data/*') 
 
 class Config_API_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8084'
-        Contrail_CLI.__init__(self, parser, IShost, ISport) 
 
-class Config_SCH_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8087'
-        Contrail_CLI.__init__(self, parser, IShost, ISport) 
+    def __init__(self, parser, host, port):
 
-class Config_SVC_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8088'
-        Contrail_CLI.__init__(self, parser, IShost, ISport) 
-
-class Control_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8083'
+        IShost = 'localhost' if host is None else host
+        ISport ='8084' if port is None else port
 
         Contrail_CLI.__init__(self, parser, IShost, ISport)
+
+class Config_SCH_CLI(Contrail_CLI):
+ 
+    def __init__(self, parser, host, port):
+
+        IShost = 'localhost' if host is None else host
+        ISport ='8087' if port is None else port
+
+        Contrail_CLI.__init__(self, parser, IShost, ISport)
+
+class Config_SVC_CLI(Contrail_CLI):
+ 
+    def __init__(self, parser, host, port):
+
+        IShost = 'localhost' if host is None else host
+        ISport ='8088' if port is None else port
+
+        Contrail_CLI.__init__(self, parser, IShost, ISport)
+
+class Control_CLI(Contrail_CLI):
+
+    def __init__(self, parser, host, port):
+
+        IShost = 'localhost' if host is None else host
+        ISport ='8083' if port is None else port
+
+        Contrail_CLI.__init__(self, parser, IShost, ISport)
+        self.parse_args()
+
+    def parse_args(self):
 
         parser_nei = self.subparser.add_parser('neighbor', help='Show BGP/XMPPP neighbors')
         parser_nei.add_argument('name', nargs='?', default='', help='Neighbor name')
@@ -532,112 +544,98 @@ class Control_CLI(Contrail_CLI):
         parser_sc.set_defaults(func=self.SnhSC)
 
     def SnhSC(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         if args.state == 'pending':
-            IST.get('Snh_ShowPendingServiceChainReq?search_string=' + args.search)
-            IST.printText('//pending_chains/list/element')
+            self.IST.get('Snh_ShowPendingServiceChainReq?search_string=' + args.search)
+            self.IST.printText('//pending_chains/list/element')
         else:
-            IST.get('Snh_ShowServiceChainReq?search_string=' + args.search)
+            self.IST.get('Snh_ShowServiceChainReq?search_string=' + args.search)
             if args.route:
                 if args.detail:
-                    IST.showSCRouteDetail('//ShowServicechainInfo')
+                    self.IST.showSCRouteDetail('//ShowServicechainInfo')
                 else:
-                    IST.showSCRoute('//ShowServicechainInfo')
+                    self.IST.showSCRoute('//ShowServicechainInfo')
             else:
-                IST.printTbl('//ShowServicechainInfo', 'src_virtual_network', 'dest_virtual_network', 'service_instance', 'src_rt_instance', 'dest_rt_instance', 'state')
+                self.IST.printTbl('//ShowServicechainInfo', 'src_virtual_network', 'dest_virtual_network', 'service_instance', 'src_rt_instance', 'dest_rt_instance', 'state')
 
     def SnhIFMapLinkShow(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_IFMapLinkTableShowReq?search_string=' + args.search)
-        IST.printText('//metadata|//left|//right')
+        self.IST.get('Snh_IFMapLinkTableShowReq?search_string=' + args.search)
+        self.IST.printText('//metadata|//left|//right')
 
     def SnhIFMapNodeShow(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         if args.name is not None:
-            IST.get('Snh_IFMapNodeShowReq?fq_node_name=' + args.name)
-            IST.printText('//IFMapObjectShowInfo/data')
+            self.IST.get('Snh_IFMapNodeShowReq?fq_node_name=' + args.name)
+            self.IST.printText('//IFMapObjectShowInfo/data')
             print "Neighbor:"            
-            IST.printText('//neighbors/list/element')
+            self.IST.printText('//neighbors/list/element')
         elif args.search is not None:
-            IST.get('Snh_IFMapTableShowReq?search_string=' + args.search)
-            IST.printText('//node_name')
+            self.IST.get('Snh_IFMapTableShowReq?search_string=' + args.search)
+            self.IST.printText('//node_name')
         else:
-            IST.get('Snh_IFMapNodeTableListShowReq')
-            IST.printTbl('//IFMapNodeTableListShowEntry')
+            self.IST.get('Snh_IFMapNodeTableListShowReq')
+            self.IST.printTbl('//IFMapNodeTableListShowEntry')
 
     def SnhXmppClient(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         print args.client
         print args.type
         if args.client is None:
-            IST.get('Snh_IFMapXmppClientInfoShowReq')
-            IST.printTbl('//IFMapXmppClientInfo')
+            self.IST.get('Snh_IFMapXmppClientInfoShowReq')
+            self.IST.printTbl('//IFMapXmppClientInfo')
         else:
             if args.type != 'link':
-                IST.get('Snh_IFMapPerClientNodesShowReq?client_index_or_name=' + args.client)
-                IST.printTbl('//IFMapPerClientNodesShowInfo')
+                self.IST.get('Snh_IFMapPerClientNodesShowReq?client_index_or_name=' + args.client)
+                self.IST.printTbl('//IFMapPerClientNodesShowInfo')
             if args.type != 'node':
-                IST.get('Snh_IFMapPerClientLinksShowReq?client_index_or_name=' + args.client)
-                IST.printText('//IFMapPerClientLinksShowInfo')
+                self.IST.get('Snh_IFMapPerClientLinksShowReq?client_index_or_name=' + args.client)
+                self.IST.printText('//IFMapPerClientLinksShowInfo')
 
     def SnhXmppMsg(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_SandeshTraceRequest?x=XmppMessageTrace')
-        IST.printText('//element')
+        self.IST.get('Snh_SandeshTraceRequest?x=XmppMessageTrace')
+        self.IST.printText('//element')
 
     def SnhXmppStats(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_ShowXmppServerReq')
-        IST.printText('//ShowXmppServerResp/*')
+        self.IST.get('Snh_ShowXmppServerReq')
+        self.IST.printText('//ShowXmppServerResp/*')
 
     def SnhXmppConn(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_ShowXmppConnectionReq')
-        IST.printTbl('//ShowXmppConnection')
+        self.IST.get('Snh_ShowXmppConnectionReq')
+        self.IST.printTbl('//ShowXmppConnection')
 
     def SnhCpuLoadInfo(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_CpuLoadInfoReq')
-        IST.printText("//CpuLoadInfo/*")
+        self.IST.get('Snh_CpuLoadInfoReq')
+        self.IST.printText("//CpuLoadInfo/*")
 
     def SnhBgpNeighbor(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_BgpNeighborReq?search_string=' + str(args.name))
+        self.IST.get('Snh_BgpNeighborReq?search_string=' + str(args.name))
 
         xpath = "//BgpNeighborResp[encoding='" + args.type + "']" if args.type else  "//BgpNeighborResp"
 
         if (args.name):
-            IST.printText(xpath + "/*")
+            self.IST.printText(xpath + "/*")
         else:
-            #ctrIS.printTbl(xpath, "peer", "peer_address", "peer_asn", "encoding", "peer_type", "state", "send_state", "flap_count", "flap_time", "negotiated_address_families")
-            IST.printTbl(xpath, "peer", "peer_address", "peer_asn", "encoding", "peer_type", "state", "send_state", "last_event", "last_state","last_state_at","last_error","flap_count", "flap_time")
+            self.IST.printTbl(xpath, "peer", "peer_address", "peer_asn", "encoding", "peer_type", "state", "send_state", "last_event", "last_state","last_state_at","last_error","flap_count", "flap_time")
 
     def SnhRoutingInstance(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_ShowRoutingInstanceReq?search_string=' + str(args.name))
+        self.IST.get('Snh_ShowRoutingInstanceReq?search_string=' + str(args.name))
         xpath = "//ShowRoutingInstance"
 
         if (args.name and args.detail):
-            IST.printText(xpath + "/*")
+            self.IST.printText(xpath + "/*")
         else:
-            IST.printTbl(xpath, "name", "virtual_network", "vn_index", "vxlan_id", "import_target", "export_target")
+            self.IST.printTbl(xpath, "name", "virtual_network", "vn_index", "vxlan_id", "import_target", "export_target")
 
     def SnhShowRouteSummary(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_ShowRouteSummaryReq?search_string=' + args.search)
+        self.IST.get('Snh_ShowRouteSummaryReq?search_string=' + args.search)
         xpath = "//ShowRouteTableSummary"
         
-        IST.printTbl(xpath, "name", "prefixes", "paths", "primary_paths", "secondary_paths", "infeasible_paths")
+        self.IST.printTbl(xpath, "name", "prefixes", "paths", "primary_paths", "secondary_paths", "infeasible_paths")
 
     def SnhShowRoute(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         path = 'Snh_ShowRouteReq?routing_table=' + args.table + \
                 '&routing_instance=' + args.vrf +\
                 '&prefix=' + args.prefix
         #http://10.85.19.201:8083/Snh_ShowRouteReq?routing_table=&routing_instance=&prefix=15.15.15.16%2F32&longer_match=&count=&start_routing_table=&start_routing_instance=&start_prefix=
 
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get(path)
+        self.IST.get(path)
 
         family = "all" if args.table else args.family
 
@@ -648,13 +646,18 @@ class Control_CLI(Contrail_CLI):
         else:
             mode ='brief'
 
-        IST.showRoute_CTR(args.destination, args.protocol, args.source, family, args.last, mode)
+        self.IST.showRoute_CTR(args.destination, args.protocol, args.source, family, args.last, mode)
 
 class vRouter_CLI(Contrail_CLI):
-    def __init__(self, parser):
-        IShost ='localhost'
-        ISport ='8085'
+    def __init__(self, parser, host, port):
+
+        IShost = 'localhost' if host is None else host
+        ISport ='8085' if port is None else port
+
         Contrail_CLI.__init__(self, parser, IShost, ISport)
+        self.parse_args()
+
+    def parse_args(self):
 
         parser_intf = self.subparser.add_parser('intf', help='Show vRouter interfaces')
         parser_intf.add_argument('name', nargs='?', default='', help='Interface name')
@@ -692,6 +695,10 @@ class vRouter_CLI(Contrail_CLI):
         parser_acl = self.subparser.add_parser('acl', help='Show ACL info')
         parser_acl.add_argument('uuid', nargs='?', default='', help='ACL uuid')
         parser_acl.set_defaults(func=self.SnhAcl)
+
+        # parser_trace = self.subparser.add_parser('trace', help='Show Sandesh trace buffer')
+        # parser_trace.add_argument('name', nargs='?', default='list', help='Trace buffer name, default: list available buffer names')
+        # parser_trace.set_defaults(func=self.SnhTrace)
 
         parser_xmpp = self.subparser.add_parser('xmpp', help='Show Agent XMPP connections (route&config) status')
         parser_xmpp.add_argument('-d', action="store_true", help='Show Agent XMPP connection details')
@@ -741,41 +748,36 @@ class vRouter_CLI(Contrail_CLI):
         parser_meta.set_defaults(func=self.SnhMetadata) 
 
     def SnhItf(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         path = 'Snh_ItfReq?name=' + args.name + '&type=&uuid=' + args.uuid + '&vn=' + args.vn + '&mac=' + args.mac + '&ipv4_address=' + args.ipv4
-        IST.get(path)
+        self.IST.get(path)
         if args.detail:
-            IST.printText("//ItfSandeshData")
+            self.IST.printText("//ItfSandeshData")
         else:
-            IST.printTbl("//ItfSandeshData", "index", "name", "active", "mac_addr", "ip_addr", "mdata_ip_addr", "vm_name", "vn_name")
+            self.IST.printTbl("//ItfSandeshData", "index", "name", "active", "mac_addr", "ip_addr", "mdata_ip_addr", "vm_name", "vn_name")
 
     def SnhVn(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         path = 'Snh_VnListReq?name=' + args.name + '&uuid=' + args.uuid
-        IST.get(path)
+        self.IST.get(path)
         if args.detail:
-            IST.printText("//VnSandeshData")
+            self.IST.printText("//VnSandeshData")
         else:
-            IST.printTbl("//VnSandeshData", "name", "uuid", "layer2_forwarding", "ipv4_forwarding", "enable_rpf", "bridging", "ipam_data")
+            self.IST.printTbl("//VnSandeshData", "name", "uuid", "layer2_forwarding", "ipv4_forwarding", "enable_rpf", "bridging", "ipam_data")
     
     def SnhVrf(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         path = 'Snh_VrfListReq?name=' + args.name
-        IST.get(path)
+        self.IST.get(path)
         if args.detail:
-            IST.printText("//VrfSandeshData")
+            self.IST.printText("//VrfSandeshData")
         else:
-            IST.printTbl("//VrfSandeshData", "name", "ucindex", "mcindex", "brindex", "evpnindex", "vxlan_id", "vn")
+            self.IST.printTbl("//VrfSandeshData", "name", "ucindex", "mcindex", "brindex", "evpnindex", "vxlan_id", "vn")
 
     def SnhSg(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_SgListReq')
-        IST.printTbl("//SgSandeshData")
+        self.IST.get('Snh_SgListReq')
+        self.IST.printTbl("//SgSandeshData")
 
     def SnhAcl(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_AclReq?uuid=' + args.uuid)
-        IST.printText("//AclSandeshData")
+        self.IST.get('Snh_AclReq?uuid=' + args.uuid)
+        self.IST.printText("//AclSandeshData")
 
     def SnhRoute(self, args):
         if args.family == 'inet4':
@@ -808,92 +810,80 @@ class vRouter_CLI(Contrail_CLI):
         else:
             mode ='brief'
 
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get(path)
-        IST.showRoute_VR(xpath, args.family, destination, mode)
+        self.IST.get(path)
+        self.IST.showRoute_VR(xpath, args.family, destination, mode)
 
     def SnhXmpp(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_AgentXmppConnectionStatusReq')
+        self.IST.get('Snh_AgentXmppConnectionStatusReq')
         if args.d:
-            IST.printText("//AgentXmppData")
+            self.IST.printText("//AgentXmppData")
         else:
-            IST.printTbl("//AgentXmppData", "controller_ip", "state", "peer_name", "peer_address", "cfg_controller", "flap_count", "flap_time")
+            self.IST.printTbl("//AgentXmppData", "controller_ip", "state", "peer_name", "peer_address", "cfg_controller", "flap_count", "flap_time")
 
     def SnhDNSXmpp(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_AgentDnsXmppConnectionStatusReq')
+        self.IST.get('Snh_AgentDnsXmppConnectionStatusReq')
         if args.d:
-            IST.printText("//AgentXmppDnsData")
+            self.IST.printText("//AgentXmppDnsData")
         else:
-            IST.printTbl("//AgentXmppDnsData", "dns_controller_ip", "state", "peer_name", "peer_address", "flap_count", "flap_time")
+            self.IST.printTbl("//AgentXmppDnsData", "dns_controller_ip", "state", "peer_name", "peer_address", "flap_count", "flap_time")
 
     def SnhAgentStats(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_AgentStatsReq')
-        IST.printText("//__IpcStatsResp_list/*")
+        self.IST.get('Snh_AgentStatsReq')
+        self.IST.printText("//__IpcStatsResp_list/*")
 
     def SnhSvcStats(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_ShowAllInfo')
-        IST.printText("//*[self::PktStats or self::DhcpStats or self::ArpStats or self::DnsStats or self::IcmpStats or self::MetadataResponse]")
+        self.IST.get('Snh_ShowAllInfo')
+        self.IST.printText("//*[self::PktStats or self::DhcpStats or self::ArpStats or self::DnsStats or self::IcmpStats or self::MetadataResponse]")
 
     def SnhIcmp(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_IcmpInfo')
+        self.IST.get('Snh_IcmpInfo')
         if args.d:
-            IST.printText("//IcmpPktSandesh")
+            self.IST.printText("//IcmpPktSandesh")
         else:
-            IST.printText("//IcmpStats/*")
+            self.IST.printText("//IcmpStats/*")
 
     def SnhIcmp6(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_Icmpv6Info')
+        self.IST.get('Snh_Icmpv6Info')
         if args.d:
-            IST.printText("//Icmpv6PktSandesh")
+            self.IST.printText("//Icmpv6PktSandesh")
         else:
-            IST.printText("//Icmpv6Stats/*")
+            self.IST.printText("//Icmpv6Stats/*")
 
     def SnhDhcp(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_DhcpInfo')
+        self.IST.get('Snh_DhcpInfo')
         if args.d:
-            IST.printText("//DhcpPktSandesh")
+            self.IST.printText("//DhcpPktSandesh")
         else:
-            IST.printText("//DhcpStats/*")
+            self.IST.printText("//DhcpStats/*")
 
     def SnhDhcp6(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_Dhcpv6Info')
+        self.IST.get('Snh_Dhcpv6Info')
         if args.d:
-            IST.printText("//Dhcpv6PktSandesh")
+            self.IST.printText("//Dhcpv6PktSandesh")
         else:
-            IST.printText("//Dhcpv6Stats/*")
+            self.IST.printText("//Dhcpv6Stats/*")
 
     def SnhArp(self, args):
-        IST = Introspec(host=args.host, port=args.port)
         if args.i:
-            IST.get('Snh_InterfaceArpStatsReq')
-            IST.printTbl("//InterfaceArpStats")
+            self.IST.get('Snh_InterfaceArpStatsReq')
+            self.IST.printTbl("//InterfaceArpStats")
         else:
-            IST.get('Snh_ArpInfo')
+            self.IST.get('Snh_ArpInfo')
             if args.d:
-                IST.printText("//ArpPktSandesh")
+                self.IST.printText("//ArpPktSandesh")
             else:
-                IST.printText("//ArpStats/*")
+                self.IST.printText("//ArpStats/*")
 
     def SnhDns(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_DnsInfo')
+        self.IST.get('Snh_DnsInfo')
         if args.d:
-            IST.printText("//DnsPktSandesh")
+            self.IST.printText("//DnsPktSandesh")
         else:
-            IST.printText("//DnsStats/*")
+            self.IST.printText("//DnsStats/*")
 
     def SnhMetadata(self, args):
-        IST = Introspec(host=args.host, port=args.port)
-        IST.get('Snh_MetadataInfo')
-        IST.printText("//MetadataResponse/*")
+        self.IST.get('Snh_MetadataInfo')
+        self.IST.printText("//MetadataResponse/*")
 
 class Collector_CLI(Contrail_CLI):
     def __init__(self, parser):
@@ -977,23 +967,44 @@ def addressInNetwork(addr, prefix):
 
 def main():
 
+    argv = sys.argv[1:]
+
+    host = None
+    port = None
+    try:
+        host = argv[argv.index('-H') + 1]
+    except ValueError:
+        try:
+            host = argv[argv.index('--host') + 1]
+        except ValueError:
+            pass
+    try:
+        port = argv[argv.index('-p') + 1]
+    except ValueError:
+        try:
+            port = argv[argv.index('--port') + 1]
+        except ValueError:
+            pass
+
+
     parser = argparse.ArgumentParser(prog='ist', description='A tools to retrieve contrail introspect output and make it CLI friendly.')
     roleparsers = parser.add_subparsers()
 
     parse_vr = roleparsers.add_parser('vr', help='Show vRouter info')
-    vRouter_CLI(parse_vr)
+    vRouter_CLI(parse_vr, host, port)
 
     parse_ctr = roleparsers.add_parser('ctr', help='Show Control node info')
-    Control_CLI(parse_ctr)
+    Control_CLI(parse_ctr, host, port)
 
     parse_cfg_api = roleparsers.add_parser('cfg-api', help='Show contrail-api info')
-    Config_API_CLI(parse_cfg_api)
+    Config_API_CLI(parse_cfg_api, host, port)
 
     parse_cfg_sch = roleparsers.add_parser('cfg-sch', help='Show contrail-schema info')
-    Config_SCH_CLI(parse_cfg_sch)
+    Config_SCH_CLI(parse_cfg_sch, host, port)
 
     parse_cfg_svc = roleparsers.add_parser('cfg-svc', help='Show contrail-svc-monitor info')
-    Config_SVC_CLI(parse_cfg_svc)
+    Config_SVC_CLI(parse_cfg_svc, host, port)
+
 
     # parse_collector = roleparsers.add_parser('collector', help='Show contrail-collector info')
     # Collector_CLI(parse_collector)
