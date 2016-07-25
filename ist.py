@@ -81,7 +81,8 @@ class Introspec:
                         if f.text:
                             row.append(f.text)
                         elif list(f):
-                            row.append(self.elementToStr('', f).rstrip())
+                            for e in f:
+                                row.append(self.elementToStr('', e).rstrip())
                         else:
                             row.append("n/a")
                     else:
@@ -454,6 +455,47 @@ class Config_SCH_CLI(Contrail_CLI):
 
         Contrail_CLI.__init__(self, parser, IShost, ISport)
 
+        self.parse_args()
+
+    def parse_args(self):
+        parser_vn = self.subparser.add_parser('vn', help='List Virtual Networks')
+        parser_vn.add_argument('name', nargs='?', default='', help='Virtual Network name')
+        parser_vn.set_defaults(func=self.SnhVnList)
+
+        parser_ri = self.subparser.add_parser('ri', help='List Routing Instances')
+        parser_ri.add_argument('name', nargs='?', default='', help='Routing Instance name')
+        parser_ri.add_argument('-v', '--vn', default='', help='Virtual Network name')
+        parser_ri.set_defaults(func=self.SnhRoutintInstanceList)
+
+        parser_sc = self.subparser.add_parser('sc', help='List Service Chains')
+        parser_sc.add_argument('name', nargs='?', default='', help='Service Chain name')
+        parser_sc.set_defaults(func=self.SnhServiceChainList)
+
+        parser_ob = self.subparser.add_parser('object', help='List Schema-transformer Ojbects (Only available in Contrail 3.0+')
+        parser_ob.add_argument('name', nargs='?', default='', help='object_id or fq_name')
+        parser_ob.add_argument('-t', '--type', default='', help='Object type')
+        parser_ob.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
+        parser_ob.set_defaults(func=self.SnhStObjectReq)
+
+    def SnhVnList(self, args):
+        self.IST.get('Snh_VnList?vn_name=' + args.name)
+        self.IST.printTbl("//VirtualNetwork", "name", "policies", "connections", "routing_instances")
+
+    def SnhRoutintInstanceList(self, args):
+        self.IST.get('Snh_RoutintInstanceList?vn_name=' + args.vn + '&ri_name=' + args.name)
+        self.IST.printTbl("//RoutingInstance", "name", "connections")
+
+    def SnhServiceChainList(self, args):
+        self.IST.get('Snh_ServiceChainList?sc_name=' + args.name)
+        self.IST.printTbl("//ServiceChain")
+
+    def SnhStObjectReq(self, args):
+        self.IST.get('Snh_StObjectReq?object_type=' + args.type + '&object_id_or_fq_name=' + args.name)
+        if args.detail:
+            self.IST.printText("//StObject")
+        else:
+            self.IST.printTbl("//StObject", 'object_type', 'object_uuid', 'object_fq_name')
+
 class Config_SVC_CLI(Contrail_CLI):
  
     def __init__(self, parser, host, port):
@@ -462,6 +504,21 @@ class Config_SVC_CLI(Contrail_CLI):
         ISport ='8088' if port is None else port
 
         Contrail_CLI.__init__(self, parser, IShost, ISport)
+
+        self.parse_args()
+
+    def parse_args(self):
+        parser_si = self.subparser.add_parser('si', help='List Service instances')
+        parser_si.add_argument('name', nargs='?', default='', help='Service instance name')
+        parser_si.add_argument('-r', '--raw', action="store_true", help='Display raw output in plain text')
+        parser_si.set_defaults(func=self.SnhServiceInstanceList)
+
+    def SnhServiceInstanceList(self, args):
+        self.IST.get('Snh_ServiceInstanceList?si_name=' + args.name)
+        if args.raw:
+            self.IST.printText("//ServiceInstance")
+        else:
+            self.IST.printTbl("//ServiceInstance")
 
 class Control_CLI(Contrail_CLI):
 
