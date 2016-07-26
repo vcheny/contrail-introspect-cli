@@ -395,7 +395,7 @@ class Contrail_CLI:
     def __init__(self, parser, host, port):
 
         parser.add_argument('-H', '--host', default=host, help="Introspect host(default='%(default)s')")
-        parser.add_argument('-p', '--port', default=port, help="Introspect port(default='%(default)s')")
+        parser.add_argument('-P', '--port', default=port, help="Introspect port(default='%(default)s')")
         self.subparser = parser.add_subparsers()
 
         parser_status = self.subparser.add_parser('status', help='show node/component status')
@@ -763,7 +763,7 @@ class vRouter_CLI(Contrail_CLI):
         parser_xmppdns.add_argument('-d', action="store_true", help='Show Agent XMPP connection details')
         parser_xmppdns.set_defaults(func=self.SnhDNSXmpp)
 
-        parser_stats = self.subparser.add_parser('stats', help='Show Agent stats (PktTrap, Flow, XMPP, Sandesh, IPC')
+        parser_stats = self.subparser.add_parser('stats', help='Show Agent stats')
         parser_stats.set_defaults(func=self.SnhAgentStats)
        
 
@@ -1064,7 +1064,7 @@ def main():
         except ValueError:
             pass
     try:
-        port = argv[argv.index('-p') + 1]
+        port = argv[argv.index('-P') + 1]
     except ValueError:
         try:
             port = argv[argv.index('--port') + 1]
@@ -1072,7 +1072,7 @@ def main():
             pass
 
 
-    parser = argparse.ArgumentParser(prog='ist', description='A tools to retrieve contrail introspect output and make it CLI friendly.')
+    parser = argparse.ArgumentParser(prog='ist', description='A script to make Contrail Introspect output CLI friendly.')
     roleparsers = parser.add_subparsers()
 
     parse_vr = roleparsers.add_parser('vr', help='Show vRouter info')

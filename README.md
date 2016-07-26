@@ -34,7 +34,7 @@ optional arguments:
   -h, --help            show this help message and exit
 
 root@comp45:~# ist vr -h
-usage: ist vr [-h] [-H HOST] [-p PORT]
+usage: ist vr [-h] [-H HOST] [-P PORT]
               {status,cpu,trace,uve,intf,vn,vrf,route,sg,acl,xmpp,xmpp-dns,stats,service}
               ...
 
@@ -58,7 +58,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -H HOST, --host HOST  Introspect host(default='localhost')
-  -p PORT, --port PORT  Introspect port(default='8085')
+  -P PORT, --port PORT  Introspect port(default='8085')
 
 root@comp45:~# ist vr intf -h
 usage: ist vr intf [-h] [-u UUID] [-v VN] [-m MAC] [-i IPV4] [-d] [name]
