@@ -967,6 +967,7 @@ class Collector_CLI(Contrail_CLI):
             self.IST.printText("/ShowCollectorServerResp/stats")
             self.IST.printText("/ShowCollectorServerResp/cql_metrics")
         if args.type != "stats":
+            print 'generators:'
             self.IST.printTbl("//GeneratorSummaryInfo")
 
     def SnhRedisUVERequest(self, args):

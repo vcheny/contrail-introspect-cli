@@ -16,28 +16,32 @@ Use ```-h``` to list possible command options
 
 ```
 root@comp45:~# ist -h
-usage: ist [-h] {vr,ctr,cfg-api,cfg-sch,cfg-svc} ...
+usage: ist [-h] {vr,ctr,cfg-api,cfg-sch,cfg-svc,collector,analytics} ...
 
 A tools to retrieve contrail introspect output and make it CLI friendly.
 
 positional arguments:
-  {vr,ctr,cfg-api,cfg-sch,cfg-svc}
+  {vr,ctr,cfg-api,cfg-sch,cfg-svc,collector,analytics}
     vr                  Show vRouter info
     ctr                 Show Control node info
     cfg-api             Show contrail-api info
     cfg-sch             Show contrail-schema info
     cfg-svc             Show contrail-svc-monitor info
+    collector           Show contrail-collector info
+    analytics           Show contrail-analytics-api info
 
 optional arguments:
   -h, --help            show this help message and exit
+
 root@comp45:~# ist vr -h
 usage: ist vr [-h] [-H HOST] [-p PORT]
-              {status,trace,uve,intf,vn,vrf,route,sg,acl,xmpp,xmpp-dns,stats,service}
+              {status,cpu,trace,uve,intf,vn,vrf,route,sg,acl,xmpp,xmpp-dns,stats,service}
               ...
 
 positional arguments:
-  {status,trace,uve,intf,vn,vrf,route,sg,acl,xmpp,xmpp-dns,stats,service}
+  {status,cpu,trace,uve,intf,vn,vrf,route,sg,acl,xmpp,xmpp-dns,stats,service}
     status              show node/component status
+    cpu                 Show CPU load info
     trace               Show Sandesh trace buffer
     uve                 Show Sandesh UVE cache
     intf                Show vRouter interfaces
@@ -46,7 +50,6 @@ positional arguments:
     route               Show routes
     sg                  Show Security Groups
     acl                 Show ACL info
-    trace               Show Sandesh trace buffer
     xmpp                Show Agent XMPP connections (route&config) status
     xmpp-dns            Show Agent XMPP connections (dns) status
     stats               Show Agent stats (PktTrap, Flow, XMPP, Sandesh, IPC
@@ -54,8 +57,9 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -H HOST, --host HOST  Config node Introspect host, default: localhost
-  -p PORT, --port PORT  Config node Introspect port, default: 8085
+  -H HOST, --host HOST  Introspect host(default='localhost')
+  -p PORT, --port PORT  Introspect port(default='8085')
+
 root@comp45:~# ist vr intf -h
 usage: ist vr intf [-h] [-u UUID] [-v VN] [-m MAC] [-i IPV4] [-d] [name]
 
@@ -76,7 +80,7 @@ optional arguments:
 ### How to run
 * from local
 ```
-ist *{vr,ctr,cfg-api,cfg-sch, cfg-svc}*
+ist *{vr,ctr,cfg-api,cfg-sch, cfg-svc,collector,analytics}*
 
 root@cont201:~# ist ctr status
 module_id: contrail-control
