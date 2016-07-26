@@ -636,8 +636,6 @@ class Control_CLI(Contrail_CLI):
             self.IST.printTbl('//IFMapNodeTableListShowEntry')
 
     def SnhXmppClient(self, args):
-        print args.client
-        print args.type
         if args.client is None:
             self.IST.get('Snh_IFMapXmppClientInfoShowReq')
             self.IST.printTbl('//IFMapXmppClientInfo')
@@ -963,18 +961,12 @@ class Collector_CLI(Contrail_CLI):
 
     def SnhShowCollectorServerReq(self, args):
         self.IST.get('Snh_ShowCollectorServerReq')
-        if args.type == 'stats':
+        if args.type != 'generators':
             self.IST.printText("/ShowCollectorServerResp/rx_socket_stats")
             self.IST.printText("/ShowCollectorServerResp/tx_socket_stats")
             self.IST.printText("/ShowCollectorServerResp/stats")
             self.IST.printText("/ShowCollectorServerResp/cql_metrics")
-        elif args.type == "generators":
-            self.IST.printTbl("//GeneratorSummaryInfo")
-        else:
-            self.IST.printText("/ShowCollectorServerResp/rx_socket_stats")
-            self.IST.printText("/ShowCollectorServerResp/tx_socket_stats")
-            self.IST.printText("/ShowCollectorServerResp/stats")
-            self.IST.printText("/ShowCollectorServerResp/cql_metrics")
+        if args.type != "stats":
             self.IST.printTbl("//GeneratorSummaryInfo")
 
     def SnhRedisUVERequest(self, args):
