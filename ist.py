@@ -22,9 +22,11 @@ debug = False
 class Introspec:
 
     output_etree = []
+    tbl_col_max_width = 60
 
-    def __init__ (self, host, port):
+    def __init__ (self, host, port, max_width):
         self.host_url = "http://" + host + ":" + str(port) + "/"
+        self.tbl_col_max_width = max_width
 
     # get instrosepc output
     def get (self, path):
@@ -70,7 +72,7 @@ class Introspec:
 
         tbl = PrettyTable(fields)
         tbl.align = 'l'
-        tbl.max_width = 60
+        tbl.max_width = self.tbl_col_max_width
 
         # start building the table
         for tree in self.output_etree:
@@ -393,7 +395,7 @@ class Introspec:
 
 class Contrail_CLI:
 
-    def __init__(self, parser, host, port):
+    def __init__(self, parser, host, port, max_width):
 
         parser.add_argument('-H', '--host', default=host, help="Introspect host(default='%(default)s')")
         parser.add_argument('-P', '--port', default=port, help="Introspect port(default='%(default)s')")
@@ -414,7 +416,7 @@ class Contrail_CLI:
         parser_uve.add_argument('name', nargs='?', default='list', help='UVE type name, default: list available type names')
         parser_uve.set_defaults(func=self.SnhUve)
 
-        self.IST = Introspec(host, port)
+        self.IST = Introspec(host, port, max_width)
 
     def SnhNodeStatus(self, args):
         self.IST.get('Snh_SandeshUVECacheReq?tname=NodeStatus')
@@ -447,21 +449,21 @@ class Contrail_CLI:
 
 class Config_API_CLI(Contrail_CLI):
 
-    def __init__(self, parser, host, port):
+    def __init__(self, parser, host, port, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8084' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
 
 class Config_SCH_CLI(Contrail_CLI):
  
-    def __init__(self, parser, host, port):
+    def __init__(self, parser, host, port, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8087' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
 
         self.parse_args()
 
@@ -506,12 +508,12 @@ class Config_SCH_CLI(Contrail_CLI):
 
 class Config_SVC_CLI(Contrail_CLI):
  
-    def __init__(self, parser, host, port):
+    def __init__(self, parser, host, port, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8088' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
 
         self.parse_args()
 
@@ -530,12 +532,12 @@ class Config_SVC_CLI(Contrail_CLI):
 
 class Control_CLI(Contrail_CLI):
 
-    def __init__(self, parser, host, port):
+    def __init__(self, parser, host, port, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8083' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
         self.parse_args()
 
     def parse_args(self):
@@ -705,12 +707,12 @@ class Control_CLI(Contrail_CLI):
         self.IST.showRoute_CTR(args.destination, args.protocol, args.source, family, args.last, mode)
 
 class vRouter_CLI(Contrail_CLI):
-    def __init__(self, parser, host, port):
+    def __init__(self, parser, host, port, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8085' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
         self.parse_args()
 
     def parse_args(self):
@@ -943,12 +945,12 @@ class vRouter_CLI(Contrail_CLI):
 
 class Collector_CLI(Contrail_CLI):
     
-    def __init__(self, parser, host, port):
+    def __init__(self, parser, host, port, max_width):
         
         IShost = 'localhost' if host is None else host
         ISport ='8089' if port is None else port
         
-        Contrail_CLI.__init__(self, parser, IShost, ISport) 
+        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width) 
 
         self.parse_args()
 
@@ -976,12 +978,12 @@ class Collector_CLI(Contrail_CLI):
         self.IST.printText("//RedisUveInfo/*")
 
 class Analytics_CLI(Contrail_CLI):
-    def __init__(self, parser, host, port):
+    def __init__(self, parser, host, port, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8090' if port is None else port
         
-        Contrail_CLI.__init__(self, parser, IShost, ISport) 
+        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width) 
 
 # class Query_Engine_CLI(Contrail_CLI):
 #     def __init__(self, parser):
@@ -1072,35 +1074,42 @@ def main():
         except ValueError:
             pass
 
+    try:
+        max_width = argv[argv.index('--max-width') + 1]
+    except ValueError:
+        max_width = 60
+        pass
+
     global debug
     if '--debug' in argv:
         debug = True
 
     parser = argparse.ArgumentParser(prog='ist', description='A script to make Contrail Introspect output CLI friendly.')
     parser.add_argument('--debug', action="store_true", help="debug mode")
+    parser.add_argument('--max-width', type=int, default=60, help="max width per column")
 
     roleparsers = parser.add_subparsers()
 
     parse_vr = roleparsers.add_parser('vr', help='Show vRouter info')
-    vRouter_CLI(parse_vr, host, port)
+    vRouter_CLI(parse_vr, host, port, max_width)
 
     parse_ctr = roleparsers.add_parser('ctr', help='Show Control node info')
-    Control_CLI(parse_ctr, host, port)
+    Control_CLI(parse_ctr, host, port, max_width)
 
     parse_cfg_api = roleparsers.add_parser('cfg-api', help='Show contrail-api info')
-    Config_API_CLI(parse_cfg_api, host, port)
+    Config_API_CLI(parse_cfg_api, host, port, max_width)
 
     parse_cfg_sch = roleparsers.add_parser('cfg-sch', help='Show contrail-schema info')
-    Config_SCH_CLI(parse_cfg_sch, host, port)
+    Config_SCH_CLI(parse_cfg_sch, host, port, max_width)
 
     parse_cfg_svc = roleparsers.add_parser('cfg-svc', help='Show contrail-svc-monitor info')
-    Config_SVC_CLI(parse_cfg_svc, host, port)
+    Config_SVC_CLI(parse_cfg_svc, host, port, max_width)
 
     parse_collector = roleparsers.add_parser('collector', help='Show contrail-collector info')
-    Collector_CLI(parse_collector, host, port)
+    Collector_CLI(parse_collector, host, port, max_width)
 
     parse_analytics = roleparsers.add_parser('analytics', help='Show contrail-analytics-api info')
-    Analytics_CLI(parse_analytics, host, port)
+    Analytics_CLI(parse_analytics, host, port, max_width)
 
     # parse_qe = roleparsers.add_parser('qe', help='Show contrail-query-engine info')
     # Query_Engine_CLI(parse_qe)
