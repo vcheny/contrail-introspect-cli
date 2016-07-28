@@ -17,7 +17,7 @@ from datetime import datetime
 from lxml import etree
 from prettytable import PrettyTable
 
-debug = 0
+debug = False
 
 class Introspec:
 
@@ -1071,8 +1071,13 @@ def main():
         except ValueError:
             pass
 
+    global debug
+    if '--debug' in argv:
+        debug = True
 
     parser = argparse.ArgumentParser(prog='ist', description='A script to make Contrail Introspect output CLI friendly.')
+    parser.add_argument('--debug', action="store_true", help="debug mode")
+
     roleparsers = parser.add_subparsers()
 
     parse_vr = roleparsers.add_parser('vr', help='Show vRouter info')
