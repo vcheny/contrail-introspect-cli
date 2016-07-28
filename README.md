@@ -16,9 +16,10 @@ Use ```-h``` to list possible command options
 
 ```
 root@comp45:~# ist -h
-usage: ist [-h] {vr,ctr,cfg-api,cfg-sch,cfg-svc,collector,analytics} ...
+usage: ist [-h] [--version] [--debug] [--max-width MAX_WIDTH]
+           {vr,ctr,cfg-api,cfg-sch,cfg-svc,collector,analytics} ...
 
-A tools to retrieve contrail introspect output and make it CLI friendly.
+A script to make Contrail Introspect output CLI friendly.
 
 positional arguments:
   {vr,ctr,cfg-api,cfg-sch,cfg-svc,collector,analytics}
@@ -32,6 +33,10 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --version             Show script version
+  --debug               debug mode
+  --max-width MAX_WIDTH
+                        max width per column
 
 root@comp45:~# ist vr -h
 usage: ist vr [-h] [-H HOST] [-P PORT]
@@ -52,7 +57,7 @@ positional arguments:
     acl                 Show ACL info
     xmpp                Show Agent XMPP connections (route&config) status
     xmpp-dns            Show Agent XMPP connections (dns) status
-    stats               Show Agent stats (PktTrap, Flow, XMPP, Sandesh, IPC
+    stats               Show Agent stats
     service             Service related info
 
 optional arguments:
@@ -199,19 +204,21 @@ optional arguments:
   -h, --help    show this help message and exit
   -d, --detail  Display detailed output
 
-root@comp45:~# ist vr vrf 
-+-----------------------------------------------------------------------------------------------------+---------+---------+---------+-----------+----------+----------------------------+
-| name                                                                                                | ucindex | mcindex | brindex | evpnindex | vxlan_id | vn                         |
-+-----------------------------------------------------------------------------------------------------+---------+---------+---------+-----------+----------+----------------------------+
-| default-domain:admin:Dummy:Dummy                                                                    | 2       | 2       | 2       | 2         | 6        | default-domain:admin:Dummy |
-| default-domain:admin:VN-L:VN-L                                                                      | 3       | 3       | 3       | 3         | 5        | default-domain:admin:VN-L  |
-| default-domain:admin:VN-L:service-eefd7ba2-db5d-4483-81c3-88372d3f8fa5-default-domain_admin_VSRX-FW | 4       | 4       | 4       | 4         | 0        | N/A                        |
-| default-domain:admin:VN-R:VN-R                                                                      | 1       | 1       | 1       | 1         | 4        | default-domain:admin:VN-R  |
-| default-domain:admin:VN-R:service-eefd7ba2-db5d-4483-81c3-88372d3f8fa5-default-domain_admin_VSRX-FW | 5       | 5       | 5       | 5         | 0        | N/A                        |
-| default-domain:default-project:ip-fabric:__default__                                                | 0       | 0       | 0       | 0         | 0        | N/A                        |
-+-----------------------------------------------------------------------------------------------------+---------+---------+---------+-----------+----------+----------------------------+
+root@comp76:~# ist vr vrf
++--------------------------------------------------------------+---------+---------+---------+-----------+----------+---------------------------+
+| name                                                         | ucindex | mcindex | brindex | evpnindex | vxlan_id | vn                        |
++--------------------------------------------------------------+---------+---------+---------+-----------+----------+---------------------------+
+| default-domain:admin:MGT:MGT                                 | 2       | 2       | 2       | 2         | 14       | default-domain:admin:MGT  |
+| default-domain:admin:VN-L:VN-L                               | 3       | 3       | 3       | 3         | 5        | default-domain:admin:VN-L |
+| default-domain:admin:VN-L:service-cc571e38-0cc7-42cc-b0d2    | 4       | 4       | 4       | 4         | 0        | N/A                       |
+| -96dc3b77df2e-default-domain_admin_HairpinFW                 |         |         |         |           |          |                           |
+| default-domain:admin:VN-R:VN-R                               | 1       | 1       | 1       | 1         | 4        | default-domain:admin:VN-R |
+| default-domain:admin:VN-R:service-cc571e38-0cc7-42cc-b0d2    | 5       | 5       | 5       | 5         | 0        | N/A                       |
+| -96dc3b77df2e-default-domain_admin_HairpinFW                 |         |         |         |           |          |                           |
+| default-domain:default-project:ip-fabric:__default__         | 0       | 0       | 0       | 0         | 0        | N/A                       |
++--------------------------------------------------------------+---------+---------+---------+-----------+----------+---------------------------+
 
-root@comp45:~# ist vr vrf default-domain:admin:VN-L:VN-L -d
+root@comp76:~# ist vr vrf default-domain:admin:VN-L:VN-L -d
 VrfSandeshData
   name: default-domain:admin:VN-L:VN-L
   ucindex: 3
@@ -508,18 +515,18 @@ Connetion Info:
 
 * neighbor
 ```
-root@cont201:~# ist ctr neighbor
-+----------+----------------+----------+----------+-----------+-------------+-----------------+----------------------------+-------------+-----------------------------+-----------------------------------------------+------------+-----------------------------+
-| peer     | peer_address   | peer_asn | encoding | peer_type | state       | send_state      | last_event                 | last_state  | last_state_at               | last_error                                    | flap_count | flap_time                   |
-+----------+----------------+----------+----------+-----------+-------------+-----------------+----------------------------+-------------+-----------------------------+-----------------------------------------------+------------+-----------------------------+
-| cont202  | 172.222.19.202 | 13979    | BGP      | internal  | Established | in sync         | fsm::EvBgpKeepalive        | OpenConfirm | 2016-Jul-20 11:59:04.314848 | Unknown                                       | 0          | n/a                         |
-| cont203  | 172.222.19.203 | 13979    | BGP      | internal  | Established | in sync         | fsm::EvBgpKeepalive        | OpenConfirm | 2016-Jul-20 11:59:04.570928 | Unknown                                       | 0          | n/a                         |
-| sonics   | 192.168.0.200  | 13979    | BGP      | internal  | Established | in sync         | fsm::EvBgpKeepalive        | OpenConfirm | 2016-Jul-20 11:59:12.509076 | Unknown                                       | 0          | n/a                         |
-| seahawks | 192.168.0.201  | 13979    | BGP      | internal  | Active      | not advertising | fsm::EvConnectTimerExpired | Connect     | 2016-Jul-22 15:25:00.096857 | Cease:Administrator has unconfigured the peer | 4          | 2016-Jul-22 06:24:35.061439 |
-| camaro   | 192.168.0.204  | 13979    | BGP      | internal  | Established | in sync         | fsm::EvBgpKeepalive        | OpenConfirm | 2016-Jul-20 11:59:11.740720 | Unknown                                       | 0          | n/a                         |
-| comp204  | 172.222.19.204 | 0        | XMPP     | internal  | Established | in sync         | xmsm::EvXmppKeepalive      | Active      | 2016-Jul-20 12:00:04.572891 | n/a                                           | 0          | n/a                         |
-| comp205  | 172.222.19.205 | 0        | XMPP     | internal  | Established | in sync         | xmsm::EvXmppKeepalive      | Active      | 2016-Jul-20 12:00:03.720286 | n/a                                           | 0          | n/a                         |
-+----------+----------------+----------+----------+-----------+-------------+-----------------+----------------------------+-------------+-----------------------------+-----------------------------------------------+------------+-----------------------------+
+root@cont201:~# ist ctr nei
++----------+----------------+----------+----------+-----------+-------------+-----------------+------------+-----------------------------+
+| peer     | peer_address   | peer_asn | encoding | peer_type | state       | send_state      | flap_count | flap_time                   |
++----------+----------------+----------+----------+-----------+-------------+-----------------+------------+-----------------------------+
+| cont202  | 172.222.19.202 | 13979    | BGP      | internal  | Established | in sync         | 0          | n/a                         |
+| cont203  | 172.222.19.203 | 13979    | BGP      | internal  | Established | in sync         | 0          | n/a                         |
+| sonics   | 192.168.0.200  | 13979    | BGP      | internal  | Established | in sync         | 0          | n/a                         |
+| seahawks | 192.168.0.201  | 13979    | BGP      | internal  | Established | in sync         | 5          | 2016-Jul-26 09:30:07.886512 |
+| camaro   | 192.168.0.204  | 13979    | BGP      | internal  | Active      | not advertising | 1          | 2016-Jul-28 12:06:24.868852 |
+| comp204  | 172.222.19.204 | 0        | XMPP     | internal  | Established | in sync         | 0          | n/a                         |
+| comp205  | 172.222.19.205 | 0        | XMPP     | internal  | Established | in sync         | 0          | n/a                         |
++----------+----------------+----------+----------+-----------+-------------+-----------------+------------+-----------------------------+
 ```
 
 * vrf
@@ -538,18 +545,30 @@ root@cont201:~# ist ctr vrf  default-domain:admin:VN-L:VN-L
 * route related
 ```
 root@cont201:~# ist ctr routesummary inet.0
-+------------------------------------------------------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
-| name                                                                                                       | prefixes | paths | primary_paths | secondary_paths | infeasible_paths |
-+------------------------------------------------------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
-| default-domain:admin:Dummy:Dummy.inet.0                                                                    | 0        | 0     | 0             | 0               | 0                |
-| default-domain:admin:VN-L:VN-L.inet.0                                                                      | 6        | 12    | 1             | 11              | 0                |
-| default-domain:admin:VN-L:service-eefd7ba2-db5d-4483-81c3-88372d3f8fa5-default-domain_admin_VSRX-FW.inet.0 | 6        | 12    | 2             | 10              | 0                |
-| default-domain:admin:VN-R:VN-R.inet.0                                                                      | 6        | 16    | 1             | 15              | 0                |
-| default-domain:admin:VN-R:service-eefd7ba2-db5d-4483-81c3-88372d3f8fa5-default-domain_admin_VSRX-FW.inet.0 | 6        | 16    | 4             | 12              | 0                |
-| default-domain:default-project:__link_local__:__link_local__.inet.0                                        | 0        | 0     | 0             | 0               | 0                |
-| default-domain:default-project:default-virtual-network:default-virtual-network.inet.0                      | 0        | 0     | 0             | 0               | 0                |
-| inet.0                                                                                                     | 0        | 0     | 0             | 0               | 0                |
-+------------------------------------------------------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
++--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
+| name                                                         | prefixes | paths | primary_paths | secondary_paths | infeasible_paths |
++--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
+| default-domain:ATEST:VNx:VNx.inet.0                          | 0        | 0     | 0             | 0               | 0                |
+| default-domain:admin:Dummy:Dummy.inet.0                      | 0        | 0     | 0             | 0               | 0                |
+| default-domain:admin:MGT:MGT.inet.0                          | 0        | 0     | 0             | 0               | 0                |
+| default-domain:admin:VN-L:VN-L.inet.0                        | 4        | 10    | 1             | 9               | 0                |
+| default-domain:admin:VN-L:service-cc571e38-0cc7-42cc-b0d2    | 4        | 10    | 2             | 8               | 0                |
+| -96dc3b77df2e-default-domain_admin_HairpinFW.inet.0          |          |       |               |                 |                  |
+| default-domain:admin:VN-R:VN-R.inet.0                        | 4        | 10    | 1             | 9               | 0                |
+| default-domain:admin:VN-R:service-cc571e38-0cc7-42cc-b0d2    | 4        | 10    | 2             | 8               | 0                |
+| -96dc3b77df2e-default-domain_admin_HairpinFW.inet.0          |          |       |               |                 |                  |
+| default-domain:default-                                      | 0        | 0     | 0             | 0               | 0                |
+| project:__link_local__:__link_local__.inet.0                 |          |       |               |                 |                  |
+| default-domain:default-project:default-virtual-network       | 0        | 0     | 0             | 0               | 0                |
+| :default-virtual-network.inet.0                              |          |       |               |                 |                  |
+| inet.0                                                       | 0        | 0     | 0             | 0               | 0                |
+| default-domain:demo:hhao-left-net:hhao-left-net.inet.0       | 0        | 0     | 0             | 0               | 0                |
+| default-domain:demo:hhao-left-v6net:hhao-left-v6net.inet.0   | 0        | 0     | 0             | 0               | 0                |
+| default-domain:demo:hhao-right-net:hhao-right-net.inet.0     | 0        | 0     | 0             | 0               | 0                |
+| default-domain:demo:hhao-right-v6net:hhao-right-v6net.inet.0 | 0        | 0     | 0             | 0               | 0                |
+| default-domain:demo:hhao-test-left:hhao-test-left.inet.0     | 0        | 0     | 0             | 0               | 0                |
+| default-domain:demo:mgt-net:mgt-net.inet.0                   | 0        | 0     | 0             | 0               | 0                |
++--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
 
 root@cont201:~# ist ctr route -h
 usage: ist ctr route [-h] [-D DESTINATION]

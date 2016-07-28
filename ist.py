@@ -2,8 +2,8 @@
 
 # Author        : Yan Chen <vcheny@outlook.com>
 # Platform      : Contrail 2.22+
-# Version       : 0.1
-# Date          : 2016-07-18
+version = '1.0.0'
+# Date          : 2016-07-28
 
 # This script provides a Contrail CLI command mainly for troublelshooting prupose. 
 # It retrieves XML output from introspect services provided by Contrail main components 
@@ -110,7 +110,7 @@ class Introspec:
         if etreenode.text and etreenode.tag == 'element':
             return indent + etreenode.text + "\n"
         elif etreenode.text:
-            return indent + etreenode.tag + ': ' + etreenode.text + "\n"
+            return indent + etreenode.tag + ': ' + etreenode.text.replace('\n', '\n' + indent + (len(etreenode.tag)+2)*' ') + "\n"
         elif etreenode.tag != 'list':
             elementStr += indent + etreenode.tag + "\n"
 
@@ -542,17 +542,17 @@ class Control_CLI(Contrail_CLI):
 
     def parse_args(self):
 
-        parser_nei = self.subparser.add_parser('neighbor', help='Show BGP/XMPPP neighbors')
-        parser_nei.add_argument('name', nargs='?', default='', help='Neighbor name')
+        parser_nei = self.subparser.add_parser('nei', help='Show BGP/XMPPP neighbors')
+        parser_nei.add_argument('search', nargs='?', default='', type=str, help='search string')
         parser_nei.add_argument('-t', '--type', choices=['BGP', 'XMPP'], default='', help='Neighbor types (BGP or XMPP)')
         parser_nei.set_defaults(func=self.SnhBgpNeighbor)
 
-        parser_vrf = self.subparser.add_parser('ri', help='Show routing instances')
-        parser_vrf.add_argument('name', nargs='?', default='', help='Instance name')
-        parser_vrf.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
-        parser_vrf.set_defaults(func=self.SnhRoutingInstance)
+        parser_ri = self.subparser.add_parser('ri', help='Show routing instances')
+        parser_ri.add_argument('search', nargs='?', default='', type=str,  help='Search string')
+        parser_ri.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
+        parser_ri.set_defaults(func=self.SnhRoutingInstance)
 
-        parser_routesummary = self.subparser.add_parser('routesummary', help='Show route summary')
+        parser_routesummary = self.subparser.add_parser('routes', help='Show route summary')
         parser_routesummary.add_argument('search', nargs='?', default='', help='Only lists matched instances')
         parser_routesummary.set_defaults(func=self.SnhShowRouteSummary)
 
@@ -606,6 +606,42 @@ class Control_CLI(Contrail_CLI):
         parser_sc.add_argument('-d', '--detail', action="store_true", default=False, help='Display detailed output')
         parser_sc.add_argument('-r', '--route', action="store_true", default=False, help='include route info.')
         parser_sc.set_defaults(func=self.SnhSC)
+
+        parser_sub = self.subparser.add_parser('config', help='Show related config info')
+        parser_config = parser_sub.add_subparsers()
+
+        parser_config_ri = parser_config.add_parser('ri', help='Routing instances')
+        parser_config_ri.add_argument('search', nargs='?', default='', type=str, help='Search string')   
+        parser_config_ri.add_argument('-d', '--detail', action="store_true", help='Display detailed output')     
+        parser_config_ri.set_defaults(func=self.SnhShowBgpInstanceConfigReq)
+
+        parser_config_rp = parser_config.add_parser('rp', help='Routing Policy (available on Contrail 3.0+)')
+        parser_config_rp.add_argument('search', nargs='?', default='', type=str, help='Search string')        
+        parser_config_rp.set_defaults(func=self.SnhShowBgpRoutingPolicyConfigReq)  
+
+        parser_config_nei = parser_config.add_parser('nei', help='BGP neighbor')
+        parser_config_nei.add_argument('search', nargs='?', default='', type=str, help='Search string')        
+        parser_config_nei.set_defaults(func=self.SnhShowBgpNeighborConfigReq) 
+
+
+    def SnhShowBgpNeighborConfigReq(self, args):
+        self.IST.get('Snh_ShowBgpNeighborConfigReq?search_string=' + args.search)
+        xpath = '//ShowBgpNeighborConfig'
+        self.IST.printText(xpath)        
+
+    def SnhShowBgpRoutingPolicyConfigReq(self, args):
+        self.IST.get('Snh_ShowBgpRoutingPolicyConfigReq?search_string=' + args.search)
+        xpath = '//ShowBgpRoutingPolicyConfig'
+        self.IST.printText(xpath)
+
+    def SnhShowBgpInstanceConfigReq(self, args):
+        self.IST.get('Snh_ShowBgpInstanceConfigReq?search_string=' + args.search)
+        xpath = '//ShowBgpInstanceConfig'
+
+        if (args.search and args.detail):
+            self.IST.printText(xpath)
+        else:
+            self.IST.printTbl(xpath, 'name', 'virtual_network_index', 'vxlan_id', 'import_target', 'export_target', 'has_pnf', 'last_change_at')
 
     def SnhSC(self, args):
         if args.state == 'pending':
@@ -663,23 +699,24 @@ class Control_CLI(Contrail_CLI):
         self.IST.printTbl('//ShowXmppConnection')
 
     def SnhBgpNeighbor(self, args):
-        self.IST.get('Snh_BgpNeighborReq?search_string=' + str(args.name))
+        self.IST.get('Snh_BgpNeighborReq?search_string=' + args.search)
 
         xpath = "//BgpNeighborResp[encoding='" + args.type + "']" if args.type else  "//BgpNeighborResp"
 
-        if (args.name):
+        if (args.search):
             self.IST.printText(xpath + "/*")
         else:
-            self.IST.printTbl(xpath, "peer", "peer_address", "peer_asn", "encoding", "peer_type", "state", "send_state", "last_event", "last_state","last_state_at","last_error","flap_count", "flap_time")
+            self.IST.printTbl(xpath, "peer", "peer_address", "peer_asn", "encoding", "peer_type", "state", "send_state", "flap_count", "flap_time")
 
     def SnhRoutingInstance(self, args):
-        self.IST.get('Snh_ShowRoutingInstanceReq?search_string=' + str(args.name))
+        self.IST.get('Snh_ShowRoutingInstanceReq?search_string=' + args.search)
         xpath = "//ShowRoutingInstance"
 
-        if (args.name and args.detail):
+        if (args.search and args.detail):
             self.IST.printText(xpath + "/*")
         else:
-            self.IST.printTbl(xpath, "name", "virtual_network", "vn_index", "vxlan_id", "import_target", "export_target")
+            #self.IST.printTbl(xpath, "name", "virtual_network", "vn_index", "vxlan_id", "import_target", "export_target")
+            self.IST.printTbl(xpath, "name", "vn_index", "vxlan_id", "import_target", "export_target", "routing_policies")
 
     def SnhShowRouteSummary(self, args):
         self.IST.get('Snh_ShowRouteSummaryReq?search_string=' + args.search)
@@ -753,10 +790,6 @@ class vRouter_CLI(Contrail_CLI):
         parser_acl = self.subparser.add_parser('acl', help='Show ACL info')
         parser_acl.add_argument('uuid', nargs='?', default='', help='ACL uuid')
         parser_acl.set_defaults(func=self.SnhAcl)
-
-        # parser_trace = self.subparser.add_parser('trace', help='Show Sandesh trace buffer')
-        # parser_trace.add_argument('name', nargs='?', default='list', help='Trace buffer name, default: list available buffer names')
-        # parser_trace.set_defaults(func=self.SnhTrace)
 
         parser_xmpp = self.subparser.add_parser('xmpp', help='Show Agent XMPP connections (route&config) status')
         parser_xmpp.add_argument('-d', action="store_true", help='Show Agent XMPP connection details')
@@ -1057,6 +1090,10 @@ def main():
 
     argv = sys.argv[1:]
 
+    if '--version' in argv:
+        print version
+        sys.exit()
+
     host = None
     port = None
     try:
@@ -1085,6 +1122,7 @@ def main():
         debug = True
 
     parser = argparse.ArgumentParser(prog='ist', description='A script to make Contrail Introspect output CLI friendly.')
+    parser.add_argument('--version', action="store_true", help="Show script version")
     parser.add_argument('--debug', action="store_true", help="debug mode")
     parser.add_argument('--max-width', type=int, default=60, help="max width per column")
 
