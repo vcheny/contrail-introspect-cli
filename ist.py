@@ -70,6 +70,7 @@ class Introspec:
 
         tbl = PrettyTable(fields)
         tbl.align = 'l'
+        tbl.max_width = 60
 
         # start building the table
         for tree in self.output_etree:
@@ -544,7 +545,7 @@ class Control_CLI(Contrail_CLI):
         parser_nei.add_argument('-t', '--type', choices=['BGP', 'XMPP'], default='', help='Neighbor types (BGP or XMPP)')
         parser_nei.set_defaults(func=self.SnhBgpNeighbor)
 
-        parser_vrf = self.subparser.add_parser('vrf', help='Show routing instances')
+        parser_vrf = self.subparser.add_parser('ri', help='Show routing instances')
         parser_vrf.add_argument('name', nargs='?', default='', help='Instance name')
         parser_vrf.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
         parser_vrf.set_defaults(func=self.SnhRoutingInstance)
