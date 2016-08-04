@@ -85,7 +85,7 @@ optional arguments:
 ### How to run
 * from local
 ```
-ist *{vr,ctr,cfg-api,cfg-sch, cfg-svc,collector,analytics}*
+ist {vr,ctr,cfg-api,cfg-sch, cfg-svc,collector,analytics}
 
 root@cont201:~# ist ctr status
 module_id: contrail-control
@@ -93,7 +93,7 @@ state: Functional
 ```
 * from remote
 ```
-ist *{vr,ctr,cfg-api,cfg-sch, cfg-svc}* -H *\<Node IP\>*
+ist {vr,ctr,cfg-api,cfg-sch, cfg-svc} -H <Node IP>
 
 [cheny-mbp:~]$ ist ctr -H cont201 status
 module_id: contrail-control
