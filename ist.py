@@ -257,7 +257,11 @@ class Introspec:
 
         return route_info.rstrip()
 
-    def showRoute_CTR(self, destination, protocol, source, family, last, mode):
+    def showRoute_CTR(self, address, protocol, tbl, source, family, last, mode):
+
+        ADDR_INET4 = 4
+        ADDR_INET6 = 6
+        ADDR_NONE = 0
 
         indent = ' ' * 4
 
@@ -265,7 +269,22 @@ class Introspec:
 
         ## building xpath to filter tables based on family...
         xpath_tbl = '//ShowRouteTable'
-        if not(family == "all"):
+        addr_type = ADDR_NONE
+        if is_ipv4(address):
+            addr_type = ADDR_INET4
+            if ((not tbl or family == "inet") or
+                    (tbl and (tbl[-6:] == 'inet.0' or tbl[-7:] == 'l3vpn.0'))):
+                xpath_tbl += '[re:test(routing_table_name/text(), "(inet|l3vpn).0$")]'
+            elif not (family == "all"):
+                xpath_tbl += '[re:test(routing_table_name/text(), "' + family + '.0$")]'
+        elif is_ipv6(address):
+            addr_type = ADDR_INET6
+            if ((not tbl or family == "inet6") or
+                    (tbl and (tbl[-7:] == 'inet6.0'))):
+                xpath_tbl += '[re:test(routing_table_name/text(), "inet6.0$")]'
+            elif not (family == "all"):
+                xpath_tbl += '[re:test(routing_table_name/text(), "' + family + '.0$")]'
+        elif not(family == "all"):
             xpath_tbl += '[re:test(routing_table_name/text(), "' + family + '.0$")]'
 
         # building xpath to fitler routes based on protocol, source etc.
@@ -283,6 +302,7 @@ class Introspec:
         for tree in self.output_etree:
             for table in tree.xpath(xpath_tbl, namespaces={'re':'http://exslt.org/regular-expressions'}):
                 tbl_name = table.find('routing_table_name').text
+
                 prefix_count = table.find('prefixes').text
                 tot_path_count = table.find('paths').text
                 pri_path_count = table.find('primary_paths').text
@@ -294,6 +314,14 @@ class Introspec:
                             % (tbl_name, prefix_count, tot_path_count, pri_path_count, sec_path_count, ifs_path_count)
                     printedTbl[tbl_name] = True
 
+                # check if route lookup is needed based on address type and route table name
+                lookup = ADDR_NONE
+                if addr_type == ADDR_INET4 and (tbl_name[-6:] == 'inet.0' or tbl_name[-7:] == 'l3vpn.0'):
+                    lookup = ADDR_INET4
+                elif addr_type == ADDR_INET6 and (tbl_name[-7:] == 'inet6.0'):
+                    lookup = ADDR_INET6
+
+                # start processing each route
                 for route in table.xpath(".//ShowRoute"):
 
                     paths = route.xpath(xpath_pth)
@@ -301,8 +329,21 @@ class Introspec:
                         continue
 
                     prefix = route.find("prefix").text
-                    if (destination and not(addressInNetwork(destination, prefix))):
-                        continue
+
+                    # skip routes if not matched or covering the address
+                    if address not in prefix:
+                        if lookup == ADDR_INET4:
+                            if not(addressInNetwork(address, prefix)):
+                                continue
+                        elif lookup == ADDR_INET6:
+                            if tbl_name == 'bgp.l3vpn-inet6.0':
+                                real_prefix = ':'.join(prefix.split(':')[2:])
+                                if not(addressInNetwork6(address, real_prefix)):
+                                    continue
+                            elif not(addressInNetwork6(address, prefix)):
+                                continue
+                        else:
+                            continue
 
                     prefix_modified = route.find("last_modified").text
                     t1 = datetime.strptime(prefix_modified, '%Y-%b-%d %H:%M:%S.%f')
@@ -557,9 +598,9 @@ class Control_CLI(Contrail_CLI):
         parser_routesummary.set_defaults(func=self.SnhShowRouteSummary)
 
         parser_route = self.subparser.add_parser('route', help='Show route in all instances for inet (default)')
-        parser_route.add_argument('prefix', nargs='?', default='', help='Show routes for given prefix')
-        parser_route.add_argument('-D', '--destination', type=valid_ipv4, help='Show matched routes (only IPv4 is supported)')
-        parser_route.add_argument('-f', '--family', choices=['inet', 'inet6', 'evpn', 'ermvpn', 'l3vpn', 'l3vpn-inet6', 'rtarget', 'all'], default="inet", help='Show routes for given family. default:inet')
+        parser_route.add_argument('address', nargs='?', default='', help='Show routes for given address')
+        parser_route.add_argument('-P', '--prefix', default='', help='Show routes exactally matching given prefix')
+        parser_route.add_argument('-f', '--family', choices=['inet', 'inet6', 'evpn', 'ermvpn', 'rtarget', 'all'], default="all", help='Show routes for given family. default:all')
         parser_route.add_argument('-l', '--last', type=valid_period, help='Show routes modified during last time period (e.g. 10s, 5m, 2h, or 5d)')
         parser_route.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
         parser_route.add_argument('-r', '--raw', action="store_true", help='Display raw output in plain text')
@@ -728,11 +769,8 @@ class Control_CLI(Contrail_CLI):
         path = 'Snh_ShowRouteReq?routing_table=' + args.table + \
                 '&routing_instance=' + args.vrf +\
                 '&prefix=' + args.prefix
-        #http://10.85.19.201:8083/Snh_ShowRouteReq?routing_table=&routing_instance=&prefix=15.15.15.16%2F32&longer_match=&count=&start_routing_table=&start_routing_instance=&start_prefix=
 
         self.IST.get(path)
-
-        family = "all" if args.table else args.family
 
         if args.detail:
             mode = 'detail'
@@ -741,7 +779,7 @@ class Control_CLI(Contrail_CLI):
         else:
             mode ='brief'
 
-        self.IST.showRoute_CTR(args.destination, args.protocol, args.source, family, args.last, mode)
+        self.IST.showRoute_CTR(args.address, args.protocol, args.table, args.source, args.family, args.last, mode)
 
 class vRouter_CLI(Contrail_CLI):
     def __init__(self, parser, host, port, max_width):
@@ -890,7 +928,7 @@ class vRouter_CLI(Contrail_CLI):
             }
             path = mapping.get(args.family, '')[0] + args.vrf
             xpath = mapping.get(args.family, '')[1]
-            if args.mac: xpath += "[mac='%s']" % args.mac
+            if args.mac: xpath += "[contains(mac, '%s')]" % args.mac
 
         destination = args.destination if args.destination else ''
 
@@ -1071,12 +1109,25 @@ def valid_period(s):
         return int(s[0:-1]) * mapping.get(s[-1], 0)
 
 def valid_ipv4(addr):
-    try:
-        socket.inet_aton(addr)
+    if is_ipv4(addr):
         return addr
-    except socket.error:
+    else:
         msg = "Not a valid IPv4 addeess."
         raise argparse.ArgumentTypeError(msg)
+
+def is_ipv4(addr):
+    try:
+        socket.inet_pton(socket.AF_INET, addr)
+    except socket.error:
+        return False
+    return True
+
+def is_ipv6(addr):
+    try:
+        socket.inet_pton(socket.AF_INET6, addr)
+    except socket.error:
+        return False
+    return True
 
 def addressInNetwork(addr, prefix):
     ipaddr = struct.unpack('!L',socket.inet_aton(addr))[0]
@@ -1085,6 +1136,20 @@ def addressInNetwork(addr, prefix):
     netaddr = struct.unpack('!L',socket.inet_aton(netaddr))[0]
     netmask = ((1<<(32-int(bits))) - 1)^0xffffffff
     return ipaddr & netmask == netaddr & netmask
+
+def addressInNetwork6(addr, prefix):
+    addr_upper,addr_lower = struct.unpack('!QQ',socket.inet_pton(socket.AF_INET6, addr))
+    #print "{0:b}".format(ip_lower)
+    netaddr,bits = prefix.split('/')
+    net_upper,net_lower = struct.unpack('!QQ',socket.inet_pton(socket.AF_INET6, netaddr))
+    if int(bits) < 65 :
+        netmask = ((1<<(64-int(bits))) - 1)^0xffffffffffffffff
+        return addr_upper & netmask == net_upper & netmask
+    elif addr_upper != net_upper:
+        return False
+    else:
+        netmask = ((1<<(128-int(bits))) - 1)^0xffffffffffffffff
+        return addr_lower & netmask == net_lower & netmask
 
 def main():
 
