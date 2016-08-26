@@ -3,7 +3,7 @@ This script provides a Contrail CLI command mainly for troublelshooting prupose.
 
 Contrail 2.22+ is supported.
 
-Note: Entire scripts is kept in one single file intentionally for easy use. 
+Note: Entire scripts is kept in one single file intentionally for easy use.
 
 ## How to run
 * Just like a regular pythoin script
@@ -62,8 +62,8 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -H HOST, --host HOST  Introspect host(default='localhost')
-  -P PORT, --port PORT  Introspect port(default='8085')
+  --host HOST           Introspect host(default='localhost')
+  --port PORT           Introspect port(default='8085')
 
 root@comp45:~# ist vr intf -h
 usage: ist vr intf [-h] [-u UUID] [-v VN] [-m MAC] [-i IPV4] [-d] [name]
@@ -95,7 +95,7 @@ state: Functional
 ```
 ist {vr,ctr,cfg-api,cfg-sch, cfg-svc} -H <Node IP>
 
-[cheny-mbp:~]$ ist ctr -H cont201 status
+[cheny-mbp:~]$ ist ctr --host cont201 status
 module_id: contrail-control
 state: Functional
 ```
@@ -190,7 +190,7 @@ ItfSandeshData
   fixed_ip6_list
   fat_flow_list
   ```
-  
+
 * vrf related
 
 ```
@@ -224,7 +224,7 @@ VrfSandeshData
   ucindex: 3
   mcindex: 3
   l2index: 3
-  source: Config; 
+  source: Config;
   uc6index: 3
   vn: default-domain:admin:VN-L
   table_label: -1
@@ -236,26 +236,24 @@ VrfSandeshData
 * route related
 ```
 root@comp45:~# ist vr route -h
-usage: ist vr route [-h] [-f {inet4,inet6,bridge,layer2,evpn}] [-p PREFIX]
-                    [-m MAC] [-D DESTINATION] [-d] [-r]
-                    [vrf]
+usage: ist vr route [-h] [-v VRF] [-f {inet,inet6,bridge,layer2,evpn}]
+                    [-p PREFIX] [-d] [-r]
+                    [address]
 
 positional arguments:
-  vrf                   VRF index, default: 0 (IP fabric)
+  address               Address
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f {inet4,inet6,bridge,layer2,evpn}, --family {inet4,inet6,bridge,layer2,evpn}
+  -v VRF, --vrf VRF     VRF index, default: 0 (IP fabric)
+  -f {inet,inet6,bridge,layer2,evpn}, --family {inet,inet6,bridge,layer2,evpn}
                         Route family
   -p PREFIX, --prefix PREFIX
-                        Route prefix
-  -m MAC, --mac MAC     MAC address
-  -D DESTINATION, --destination DESTINATION
-                        Show matched routes (only IPv4 is supported)
+                        IPv4 or IPv6 prefix
   -d, --detail          Display detailed output
   -r, --raw             Display raw output in plain text
 
-root@comp45:~# ist vr route 3
+root@comp45:~# ist vr route -v 3
 10.10.10.0/24
     [Local] pref:100
      nh_index:1 , nh_type:discard, nh_policy:disabled, active_label:-1, vxlan_id:0
@@ -300,8 +298,8 @@ root@comp45:~# ist vr route 3
      to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
     [172.222.19.203] pref:100
      to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
-     
-root@comp45:~# ist vr route 3 -p 200.200.200.0/24
+
+root@comp45:~# ist vr route -v 3 -p 200.200.200.0/24
 200.200.200.0/24
     [172.222.19.202] pref:100
      to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
@@ -315,8 +313,8 @@ root@comp45:~# ist vr route 3 -p 200.200.200.0/24 -d
     [172.222.19.203] pref:100
      to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
      dest_vn:[], sg:[], communities:[]
-     
-root@comp45:~# ist vr route 3 -p 200.200.200.0/24 -r
+
+root@comp45:~# ist vr route -v 3 -p 200.200.200.0/24 -r
 RouteUcSandeshData
   src_ip: 200.200.200.0
   src_plen: 24
@@ -342,7 +340,7 @@ RouteUcSandeshData
         dest_vn: default-domain:admin:VN-L
         unresolved: false
         sg_list
-        supported_tunnel_type: MPLSoGRE 
+        supported_tunnel_type: MPLSoGRE
         active_tunnel_type: MPLSoGRE
         stale: false
         path_preference_data
@@ -372,7 +370,7 @@ RouteUcSandeshData
         dest_vn: default-domain:admin:VN-L
         unresolved: false
         sg_list
-        supported_tunnel_type: MPLSoGRE 
+        supported_tunnel_type: MPLSoGRE
         active_tunnel_type: MPLSoGRE
         stale: false
         path_preference_data
@@ -385,8 +383,8 @@ RouteUcSandeshData
   ipam_subnet_route: false
   proxy_arp: true
   multicast: false
-  
-root@comp45:~# ist vr route 3 -D 200.200.200.10
+
+root@comp45:~# ist vr route 3 200.200.200.10
 200.200.200.0/24
     [172.222.19.202] pref:100
      to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
@@ -405,7 +403,7 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
 
-root@comp45:~# ist vr trace 
+root@comp45:~# ist vr trace
 trace_buf_name: Acl
 trace_buf_name: AgentDBwalkTrace
 trace_buf_name: Arp
@@ -531,7 +529,7 @@ root@cont201:~# ist ctr nei
 
 * vrf
 ```
-root@cont201:~# ist ctr vrf  default-domain:admin:VN-L:VN-L 
+root@cont201:~# ist ctr vrf  default-domain:admin:VN-L:VN-L
 +--------------------------------+---------------------------+----------+----------+--------------------------+--------------------------+
 | name                           | virtual_network           | vn_index | vxlan_id | import_target            | export_target            |
 +--------------------------------+---------------------------+----------+----------+--------------------------+--------------------------+
@@ -544,7 +542,7 @@ root@cont201:~# ist ctr vrf  default-domain:admin:VN-L:VN-L
 
 * route related
 ```
-root@cont201:~# ist ctr routesummary inet.0
+root@cont201:~# ist ctr routes inet.0
 +--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
 | name                                                         | prefixes | paths | primary_paths | secondary_paths | infeasible_paths |
 +--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
@@ -571,22 +569,21 @@ root@cont201:~# ist ctr routesummary inet.0
 +--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
 
 root@cont201:~# ist ctr route -h
-usage: ist ctr route [-h] [-D DESTINATION]
-                     [-f {inet,inet6,evpn,ermvpn,l3vpn,l3vpn-inet6,rtarget,all}]
-                     [-l LAST] [-d] [-r]
-                     [-p {BGP,XMPP,local,ServiceChain,all}] [-v VRF]
+usage: ist ctr route [-h] [-P PREFIX]
+                     [-f {inet,inet6,evpn,ermvpn,rtarget,all}] [-l LAST] [-d]
+                     [-r] [-p {BGP,XMPP,local,ServiceChain,all}] [-v VRF]
                      [-s SOURCE] [-t TABLE]
-                     [prefix]
+                     [address]
 
 positional arguments:
-  prefix                Show routes for given prefix
+  address               Show routes for given address
 
 optional arguments:
   -h, --help            show this help message and exit
-  -D DESTINATION, --destination DESTINATION
-                        Show matched routes (only IPv4 is supported)
-  -f {inet,inet6,evpn,ermvpn,l3vpn,l3vpn-inet6,rtarget,all}, --family {inet,inet6,evpn,ermvpn,l3vpn,l3vpn-inet6,rtarget,all}
-                        Show routes for given family. default:inet
+  -P PREFIX, --prefix PREFIX
+                        Show routes exactally matching given prefix
+  -f {inet,inet6,evpn,ermvpn,rtarget,all}, --family {inet,inet6,evpn,ermvpn,rtarget,all}
+                        Show routes for given family. default:all
   -l LAST, --last LAST  Show routes modified during last time period (e.g.
                         10s, 5m, 2h, or 5d)
   -d, --detail          Display detailed output
@@ -598,7 +595,7 @@ optional arguments:
                         Show routes learned from given source
   -t TABLE, --table TABLE
                         Show routes in given table
-                        
+
 
 root@cont201:~# ist ctr route -t default-domain:admin:VN-L:VN-L.inet.0
 
@@ -628,7 +625,7 @@ default-domain:admin:VN-L:VN-L.inet.0: 6 destinations, 12 routes (1 primary, 11 
 200.200.200.0/24, age: 0:23:30.329465, last_modified: 2016-Jul-22 15:10:48.361016
     [BGP|192.168.0.204] age: 0:23:30.345893, localpref: 100, nh: 192.168.0.204, encap: [], label: 39, AS path: None
 
-root@cont201:~# ist ctr route -t default-domain:admin:VN-L:VN-L.inet.0 10.10.10.4/32
+root@cont201:~# ist ctr route -t default-domain:admin:VN-L:VN-L.inet.0 -P 10.10.10.4/32
 
 default-domain:admin:VN-L:VN-L.inet.0: 6 destinations, 12 routes (1 primary, 11 secondary, 0 infeasible)
 
@@ -658,12 +655,3 @@ bgp.l3vpn.0: 18 destinations, 28 routes (20 primary, 8 secondary, 0 infeasible)
 13979:33001:200.200.200.0/24, age: 0:31:45.741034, last_modified: 2016-Jul-22 15:10:48.360933
     [BGP|192.168.0.204] age: 0:31:45.744422, localpref: 100, nh: 192.168.0.204, encap: [], label: 39, AS path: None
 ```
-
-
-
-
-
-
-
-
-

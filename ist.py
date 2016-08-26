@@ -180,7 +180,7 @@ class Introspec:
                         dip = nh.find("dip").text
                         sip = nh.find("sip").text
                         label = path.find("label").text
-                        if nh.find('mac'):
+                        if nh.find('mac') is not None:
                             mac = nh.find('mac').text
                             path_info += "to %s via %s dip:%s sip:%s label:%s, " % (mac, tunnel_type, dip, sip, label)
                         else:
