@@ -2,7 +2,7 @@
 
 # Author        : Yan Chen <vcheny@outlook.com>
 # Platform      : Contrail 2.22+
-version = '1.0.1'
+version = '1.0.2'
 # Date          : 2016-07-28
 
 # This script provides a Contrail CLI command mainly for troublelshooting prupose.
@@ -123,9 +123,19 @@ class Introspec:
 
         return elementStr
 
-    def showRoute_VR(self, xpathExpr, family, destination, mode):
+    def showRoute_VR(self, xpathExpr, family, address, mode):
 
         indent = ' ' * 4
+
+        ADDR_INET4 = 4
+        ADDR_INET6 = 6
+        ADDR_NONE = 0
+
+        addr_type = ADDR_NONE
+        if is_ipv4(address):
+            addr_type = ADDR_INET4
+        elif is_ipv6(address):
+            addr_type = ADDR_INET6
 
         for tree in self.output_etree:
             for route in tree.xpath(xpathExpr):
@@ -134,8 +144,12 @@ class Introspec:
                 else:
                     prefix = route.find("mac").text
 
-                if (family == 'inet4'):
-                    if (destination and not addressInNetwork(destination, prefix)):
+                if family == 'inet' and addr_type == ADDR_INET4:
+                    if not addressInNetwork(address, prefix):
+                        if debug: print "DEBUG: skipping " + prefix
+                        continue
+                elif family == 'inet6' and addr_type == ADDR_INET6:
+                    if not addressInNetwork6(address, prefix):
                         if debug: print "DEBUG: skipping " + prefix
                         continue
 
@@ -162,12 +176,15 @@ class Introspec:
                         path_info += "to %s via %s, assigned_label:%s, " % (mac, itf, label)
 
                     elif nh_type == "tunnel":
-                        mac = nh.find('mac').text
                         tunnel_type = nh.find("tunnel_type").text
                         dip = nh.find("dip").text
                         sip = nh.find("sip").text
                         label = path.find("label").text
-                        path_info += "to %s via %s dip:%s sip:%s label:%s, " % (mac, tunnel_type, dip, sip, label)
+                        if nh.find('mac'):
+                            mac = nh.find('mac').text
+                            path_info += "to %s via %s dip:%s sip:%s label:%s, " % (mac, tunnel_type, dip, sip, label)
+                        else:
+                            path_info += "via %s dip:%s sip:%s label:%s, " % (tunnel_type, dip, sip, label)
 
                     elif nh_type == "receive":
                         itf = nh.find("itf").text
@@ -438,8 +455,8 @@ class Contrail_CLI:
 
     def __init__(self, parser, host, port, max_width):
 
-        parser.add_argument('-H', '--host', default=host, help="Introspect host(default='%(default)s')")
-        parser.add_argument('-P', '--port', default=port, help="Introspect port(default='%(default)s')")
+        parser.add_argument('--host', default=host, help="Introspect host(default='%(default)s')")
+        parser.add_argument('--port', default=port, help="Introspect port(default='%(default)s')")
         self.subparser = parser.add_subparsers()
 
         parser_status = self.subparser.add_parser('status', help='show node/component status')
@@ -813,11 +830,12 @@ class vRouter_CLI(Contrail_CLI):
         parser_vrf.set_defaults(func=self.SnhVrf)
 
         parser_route = self.subparser.add_parser('route', help='Show routes')
-        parser_route.add_argument('vrf', nargs='?', default='0', help='VRF index, default: 0 (IP fabric)')
-        parser_route.add_argument('-f', '--family', choices=['inet4', 'inet6', 'bridge', 'layer2', 'evpn'], default='inet4', help='Route family')
-        parser_route.add_argument('-p', '--prefix', default='/', help='Route prefix')
-        parser_route.add_argument('-m', '--mac', default='', help='MAC address')
-        parser_route.add_argument('-D', '--destination', type=valid_ipv4, help='Show matched routes (only IPv4 is supported)')
+        parser_route.add_argument('address', nargs='?', default='', help='Address')
+        parser_route.add_argument('-v', '--vrf', type=int, default=0, help='VRF index, default: 0 (IP fabric)')
+        parser_route.add_argument('-f', '--family', choices=['inet', 'inet6', 'bridge', 'layer2', 'evpn'], default='', help='Route family')
+        parser_route.add_argument('-p', '--prefix', default='/', help='IPv4 or IPv6 prefix')
+        #parser_route.add_argument('-m', '--mac', default='', help='MAC address')
+        #parser_route.add_argument('-D', '--destination', type=valid_ipv4, help='Show matched routes (only IPv4 is supported)')
         parser_route.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
         parser_route.add_argument('-r', '--raw', action="store_true", help='Display raw output in plain text')
         parser_route.set_defaults(func=self.SnhRoute)
@@ -909,28 +927,38 @@ class vRouter_CLI(Contrail_CLI):
         self.IST.printText("//AclSandeshData")
 
     def SnhRoute(self, args):
-        if args.family == 'inet4':
+
+        if args.family =='':
+            if args.address == '' or is_ipv4(args.address):
+                args.family = 'inet'
+            elif is_ipv6(args.address):
+                args.family = 'inet6'
+            else:
+                args.family = 'layer2'
+
+        if args.family == 'inet':
             p=args.prefix.split('/')
             if len(p) == 1: p.append('32')
-            path = 'Snh_Inet4UcRouteReq?vrf_index=' + args.vrf + '&src_ip=' + p[0] + '&prefix_len=' + p[1] + '&stale='
+            path = 'Snh_Inet4UcRouteReq?vrf_index=' + str(args.vrf) + '&src_ip=' + p[0] + '&prefix_len=' + p[1] + '&stale='
             xpath = '//RouteUcSandeshData'
+            if args.address and not is_ipv4(args.address): xpath += "[contains(src_ip, '%s')]" % args.address
 
         elif args.family == 'inet6':
             p=args.prefix.split('/')
             if len(p) == 1: p.append('128')
-            path = 'Snh_Inet6UcRouteReq?vrf_index=' + args.vrf + '&src_ip=' + p[0] + '&prefix_len=' + p[1] + '&stale='
+            path = 'Snh_Inet6UcRouteReq?vrf_index=' + str(args.vrf) + '&src_ip=' + p[0] + '&prefix_len=' + p[1] + '&stale='
             xpath = '//RouteUcSandeshData'
+            if args.address and not is_ipv6(args.address): xpath += "[contains(src_ip, '%s')]" % args.address
+
         else:
             mapping = {
                 'bridge': ['Snh_BridgeRouteReq?vrf_index=', '//RouteL2SandeshData'],
                 'evpn': ['Snh_EvpnRouteReq?vrf_index=', '//RouteEvpnSandeshData'],
                 'layer2': ['Snh_Layer2RouteReq?vrf_index=', '//RouteL2SandeshData']
             }
-            path = mapping.get(args.family, '')[0] + args.vrf
+            path = mapping.get(args.family, '')[0] + str(args.vrf)
             xpath = mapping.get(args.family, '')[1]
-            if args.mac: xpath += "[contains(mac, '%s')]" % args.mac
-
-        destination = args.destination if args.destination else ''
+            if args.address: xpath += "[contains(mac, '%s')]" % args.address
 
         if args.detail:
             mode = 'detail'
@@ -940,7 +968,7 @@ class vRouter_CLI(Contrail_CLI):
             mode ='brief'
 
         self.IST.get(path)
-        self.IST.showRoute_VR(xpath, args.family, destination, mode)
+        self.IST.showRoute_VR(xpath, args.family, args.address, mode)
 
     def SnhXmpp(self, args):
         self.IST.get('Snh_AgentXmppConnectionStatusReq')
@@ -1108,12 +1136,12 @@ def valid_period(s):
         }
         return int(s[0:-1]) * mapping.get(s[-1], 0)
 
-def valid_ipv4(addr):
-    if is_ipv4(addr):
-        return addr
-    else:
-        msg = "Not a valid IPv4 addeess."
-        raise argparse.ArgumentTypeError(msg)
+# def valid_ipv4(addr):
+#     if is_ipv4(addr):
+#         return addr
+#     else:
+#         msg = "Not a valid IPv4 addeess."
+#         raise argparse.ArgumentTypeError(msg)
 
 def is_ipv4(addr):
     try:
@@ -1139,7 +1167,7 @@ def addressInNetwork(addr, prefix):
 
 def addressInNetwork6(addr, prefix):
     addr_upper,addr_lower = struct.unpack('!QQ',socket.inet_pton(socket.AF_INET6, addr))
-    #print "{0:b}".format(ip_lower)
+    #if debug: print "{0:b}".format(ip_lower)
     netaddr,bits = prefix.split('/')
     net_upper,net_lower = struct.unpack('!QQ',socket.inet_pton(socket.AF_INET6, netaddr))
     if int(bits) < 65 :
@@ -1161,20 +1189,16 @@ def main():
 
     host = None
     port = None
+
     try:
-        host = argv[argv.index('-H') + 1]
+        host = argv[argv.index('--host') + 1]
     except ValueError:
-        try:
-            host = argv[argv.index('--host') + 1]
-        except ValueError:
-            pass
+        pass
+
     try:
-        port = argv[argv.index('-P') + 1]
+        port = argv[argv.index('--port') + 1]
     except ValueError:
-        try:
-            port = argv[argv.index('--port') + 1]
-        except ValueError:
-            pass
+        pass
 
     try:
         max_width = argv[argv.index('--max-width') + 1]
