@@ -813,6 +813,7 @@ class vRouter_CLI(Contrail_CLI):
         parser_intf.add_argument('name', nargs='?', default='', help='Interface name')
         parser_intf.add_argument('-u', '--uuid', default='', help='Interface uuid')
         parser_intf.add_argument('-v', '--vn', default='', help='Virutal network')
+        parser_intf.add_argument('--vm', default='', help='Virutal machine name')
         parser_intf.add_argument('-m', '--mac', default='', help='VM mac address')
         parser_intf.add_argument('-i', '--ipv4', default='', help='VM IP address')
         parser_intf.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
@@ -897,10 +898,14 @@ class vRouter_CLI(Contrail_CLI):
     def SnhItf(self, args):
         path = 'Snh_ItfReq?name=' + args.name + '&type=&uuid=' + args.uuid + '&vn=' + args.vn + '&mac=' + args.mac + '&ipv4_address=' + args.ipv4
         self.IST.get(path)
+
+        xpath = "//ItfSandeshData"
+        if args.vm: xpath += "[contains(vm_name, '%s')]" % args.vm
+
         if args.detail:
-            self.IST.printText("//ItfSandeshData")
+            self.IST.printText(xpath)
         else:
-            self.IST.printTbl("//ItfSandeshData", "index", "name", "active", "mac_addr", "ip_addr", "mdata_ip_addr", "vm_name", "vn_name")
+            self.IST.printTbl(xpath, "index", "name", "active", "mac_addr", "ip_addr", "mdata_ip_addr", "vm_name", "vn_name")
 
     def SnhVn(self, args):
         path = 'Snh_VnListReq?name=' + args.name + '&uuid=' + args.uuid
