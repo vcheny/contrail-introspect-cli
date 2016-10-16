@@ -2,7 +2,7 @@
 
 # Author        : Yan Chen <vcheny@outlook.com>
 # Platform      : Contrail 2.22+
-version = '1.0.2'
+version = '1.0.3'
 # Date          : 2016-07-28
 
 # This script provides a Contrail CLI command mainly for troublelshooting prupose.
