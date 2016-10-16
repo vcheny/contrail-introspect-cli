@@ -54,6 +54,24 @@ class Introspec:
 
             self.output_etree.append(etree.fromstring(ISOutput))
 
+            if 'Snh_PageReq?x=' in path:
+                break
+
+            # some routes output from vrouter may have pagination
+            pagination = self.output_etree[-1].xpath("//Pagination/req/PageReqData")
+            if len(pagination):
+                if (pagination[0].find("next_page").text is not None):
+                    all = pagination[0].find("all").text
+                    if(all is not None):
+                        path = 'Snh_PageReq?x=' + all
+                        self.output_etree = []
+                        continue
+                    else:
+                        print "Warning: all page in pagination is empty!"
+                        break
+                else:
+                    break
+
             next_batch = self.output_etree[-1].xpath("//next_batch")
 
             if not len(next_batch):
