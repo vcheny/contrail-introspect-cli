@@ -866,6 +866,13 @@ class vRouter_CLI(Contrail_CLI):
         parser_acl.add_argument('uuid', nargs='?', default='', help='ACL uuid')
         parser_acl.set_defaults(func=self.SnhAcl)
 
+        parser_hc = self.subparser.add_parser('hc', help='Health Check info')
+        parser_hc.add_argument('name', nargs='?', default='', help='HC name')
+        parser_hc.set_defaults(func=self.SnhHealthCheck)
+
+        parser_baas = self.subparser.add_parser('baas', help='Bgp As A Service info')
+        parser_baas.set_defaults(func=self.SnhBaaS)
+
         parser_xmpp = self.subparser.add_parser('xmpp', help='Show Agent XMPP connections (route&config) status')
         parser_xmpp.add_argument('-d', action="store_true", help='Show Agent XMPP connection details')
         parser_xmpp.set_defaults(func=self.SnhXmpp)
@@ -905,6 +912,9 @@ class vRouter_CLI(Contrail_CLI):
         parser_arp.add_argument('-d', action="store_true", help='Show packet trace details')
         parser_arp.add_argument('-i', action="store_true", help='Show arp stats per interface')
         parser_arp.set_defaults(func=self.SnhArp)
+
+        parser_arpCache = parser_svc.add_parser('arpCache', help='ARP Cache')
+        parser_arpCache.set_defaults(func=self.SnhArpCache)
 
         parser_dns = parser_svc.add_parser('dns', help='dns stats or pkt trace')
         parser_dns.add_argument('-d', action="store_true", help='Show packet trace details')
@@ -1054,6 +1064,10 @@ class vRouter_CLI(Contrail_CLI):
             else:
                 self.IST.printText("//ArpStats/*")
 
+    def SnhArpCache(self, args):
+        self.IST.get('Snh_ShowArpCache')
+        self.IST.printTbl("//ArpSandeshData")
+
     def SnhDns(self, args):
         self.IST.get('Snh_DnsInfo')
         if args.d:
@@ -1064,6 +1078,19 @@ class vRouter_CLI(Contrail_CLI):
     def SnhMetadata(self, args):
         self.IST.get('Snh_MetadataInfo')
         self.IST.printText("//MetadataResponse/*")
+
+    def SnhHealthCheck(self,args):
+        self.IST.get('Snh_HealthCheckSandeshReq')
+        if args.name:
+            self.IST.printText("//HealthCheckSandeshData[contains(name,'%s')]//HealthCheckInstanceSandeshData/*" % args.name)
+        else:
+            self.IST.printTbl("//HealthCheckSandeshData", "uuid", "name", "monitor_type",
+                "http_method", "url_path", "expected_codes", "delay", "timeout", "max_retries")
+
+    def SnhBaaS(self,args):
+        self.IST.get('Snh_BgpAsAServiceSandeshReq')
+        self.IST.printTbl("//BgpAsAServiceSandeshList")
+
 
 class Collector_CLI(Contrail_CLI):
 
