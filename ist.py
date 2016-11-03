@@ -630,9 +630,10 @@ class Control_CLI(Contrail_CLI):
 
         parser_routesummary = self.subparser.add_parser('routes', help='Show route summary')
         parser_routesummary.add_argument('search', nargs='?', default='', help='Only lists matched instances')
+        parser_routesummary.add_argument('-f', '--family', choices=['inet', 'inet6', 'evpn', 'ermvpn', 'all'], default='inet', help="Route family(default='%(default)s')")
         parser_routesummary.set_defaults(func=self.SnhShowRouteSummary)
 
-        parser_route = self.subparser.add_parser('route', help='Show route in all instances for inet (default)')
+        parser_route = self.subparser.add_parser('route', help='Show route')
         parser_route.add_argument('address', nargs='?', default='', help='Show routes for given address')
         parser_route.add_argument('-P', '--prefix', default='', help='Show routes exactally matching given prefix')
         parser_route.add_argument('-f', '--family', choices=['inet', 'inet6', 'evpn', 'ermvpn', 'rtarget', 'all'], default="all", help='Show routes for given family. default:all')
@@ -676,6 +677,7 @@ class Control_CLI(Contrail_CLI):
         parser_ifmap_link.add_argument('search', nargs='?', default='', help='search string')
         parser_ifmap_link.set_defaults(func=self.SnhIFMapLinkShow)
 
+        ## ServiceChain
         parser_sc = self.subparser.add_parser('sc', help='Show ServiceChain info')
         parser_sc.add_argument('search', nargs='?', default='', help='search string')
         parser_sc.add_argument('-s', '--state', choices=['pending', 'all'], default='all', help='servicechain state. Default = all')
@@ -683,6 +685,7 @@ class Control_CLI(Contrail_CLI):
         parser_sc.add_argument('-r', '--route', action="store_true", default=False, help='include route info.')
         parser_sc.set_defaults(func=self.SnhSC)
 
+        ## Config related
         parser_sub = self.subparser.add_parser('config', help='Show related config info')
         parser_config = parser_sub.add_subparsers()
 
@@ -695,14 +698,32 @@ class Control_CLI(Contrail_CLI):
         parser_config_rp.add_argument('search', nargs='?', default='', type=str, help='Search string')
         parser_config_rp.set_defaults(func=self.SnhShowBgpRoutingPolicyConfigReq)
 
-        parser_config_nei = parser_config.add_parser('nei', help='BGP neighbor')
-        parser_config_nei.add_argument('search', nargs='?', default='', type=str, help='Search string')
-        parser_config_nei.set_defaults(func=self.SnhShowBgpNeighborConfigReq)
+        parser_config_bgp = parser_config.add_parser('bgp', help='BGP neighbor')
+        parser_config_bgp.add_argument('search', nargs='?', default='', type=str, help='Search string')
+        parser_config_bgp.add_argument('-t', '--type', choices=['bgpaas', 'fabric','all'], default='all', help='filter by router_type. Default = all')
+        parser_config_bgp.set_defaults(func=self.SnhShowBgpNeighborConfigReq)
 
+        ## RT
+        parser_rt = self.subparser.add_parser('rt', help='Show RtGroup info')
+        parser_rt.add_argument('search', nargs='?', default='', help='search string')
+        parser_rt.add_argument('-d', '--detail', action="store_true", default=False, help='Display detailed output')
+        parser_rt.set_defaults(func=self.SnhShowRtGroupReq)
+
+    def SnhShowRtGroupReq(self, args):
+        if args.detail:
+            self.IST.get('Snh_ShowRtGroupReq?search_string=' + args.search)
+        else:
+            self.IST.get('Snh_ShowRtGroupSummaryReq?search_string=' + args.search)
+        xpath = '//ShowRtGroupInfo'
+        self.IST.printTbl(xpath)
 
     def SnhShowBgpNeighborConfigReq(self, args):
         self.IST.get('Snh_ShowBgpNeighborConfigReq?search_string=' + args.search)
         xpath = '//ShowBgpNeighborConfig'
+        if args.type == 'bgpaas':
+            xpath += "[contains(router_type, '%s')]" % args.type
+        elif args.type == 'fabric':
+            xpath += "[router_type[not(normalize-space())]]"
         self.IST.printText(xpath)
 
     def SnhShowBgpRoutingPolicyConfigReq(self, args):
@@ -797,6 +818,8 @@ class Control_CLI(Contrail_CLI):
     def SnhShowRouteSummary(self, args):
         self.IST.get('Snh_ShowRouteSummaryReq?search_string=' + args.search)
         xpath = "//ShowRouteTableSummary"
+        if args.family != 'all':
+            xpath += "[contains(name, '%s.0')]" % args.family
 
         self.IST.printTbl(xpath, "name", "prefixes", "paths", "primary_paths", "secondary_paths", "infeasible_paths")
 
@@ -828,10 +851,10 @@ class vRouter_CLI(Contrail_CLI):
     def parse_args(self):
 
         parser_intf = self.subparser.add_parser('intf', help='Show vRouter interfaces')
-        parser_intf.add_argument('name', nargs='?', default='', help='Interface name')
+        parser_intf.add_argument('search', nargs='?', default='', help='Search string')
         parser_intf.add_argument('-u', '--uuid', default='', help='Interface uuid')
         parser_intf.add_argument('-v', '--vn', default='', help='Virutal network')
-        parser_intf.add_argument('--vm', default='', help='Virutal machine name')
+        parser_intf.add_argument('-n', '--name', default='', help='Interface name')
         parser_intf.add_argument('-m', '--mac', default='', help='VM mac address')
         parser_intf.add_argument('-i', '--ipv4', default='', help='VM IP address')
         parser_intf.add_argument('-d', '--detail', action="store_true", help='Display detailed output')
@@ -928,7 +951,7 @@ class vRouter_CLI(Contrail_CLI):
         self.IST.get(path)
 
         xpath = "//ItfSandeshData"
-        if args.vm: xpath += "[contains(vm_name, '%s')]" % args.vm
+        if args.search: xpath += "[contains(., '%s')]" % args.search
 
         if args.detail:
             self.IST.printText(xpath)
