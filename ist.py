@@ -320,7 +320,10 @@ class Introspec:
             elif not (family == "all"):
                 xpath_tbl += '[re:test(routing_table_name/text(), "' + family + '.0$")]'
         elif not(family == "all"):
-            xpath_tbl += '[re:test(routing_table_name/text(), "' + family + '.0$")]'
+            if (family == "inet"):
+                xpath_tbl += '[re:test(routing_table_name/text(), "(inet|l3vpn).0$")]'
+            else:
+                xpath_tbl += '[re:test(routing_table_name/text(), "' + family + '.0$")]'
 
         # building xpath to fitler routes based on protocol, source etc.
         xpath_pth = './/ShowRoutePath'
@@ -633,6 +636,11 @@ class Control_CLI(Contrail_CLI):
         parser_routesummary.add_argument('-f', '--family', choices=['inet', 'inet6', 'evpn', 'ermvpn', 'all'], default='inet', help="Route family(default='%(default)s')")
         parser_routesummary.set_defaults(func=self.SnhShowRouteSummary)
 
+        parser_rtable = self.subparser.add_parser('rtable', help='Show route table names')
+        parser_rtable.add_argument('search', nargs='?', default='', help='Only lists matched tables')
+        parser_rtable.add_argument('-f', '--family', choices=['inet', 'inet6', 'evpn', 'ermvpn', 'all'], default='inet', help="Route family(default='%(default)s')")
+        parser_rtable.set_defaults(func=self.SnhShowRTable)
+
         parser_route = self.subparser.add_parser('route', help='Show route')
         parser_route.add_argument('address', nargs='?', default='', help='Show routes for given address')
         parser_route.add_argument('-P', '--prefix', default='', help='Show routes exactally matching given prefix')
@@ -645,6 +653,8 @@ class Control_CLI(Contrail_CLI):
         parser_route.add_argument('-s', '--source', default='all', help='Show routes learned from given source')
         parser_route.add_argument('-t', '--table', default='', help='Show routes in given table')
         parser_route.set_defaults(func=self.SnhShowRoute)
+
+
 
         ## XMPP
         parser_sub = self.subparser.add_parser('xmpp', help='Show XMPP info')
@@ -822,6 +832,14 @@ class Control_CLI(Contrail_CLI):
             xpath += "[contains(name, '%s.0')]" % args.family
 
         self.IST.printTbl(xpath, "name", "prefixes", "paths", "primary_paths", "secondary_paths", "infeasible_paths")
+
+    def SnhShowRTable(self, args):
+        self.IST.get('Snh_ShowRouteSummaryReq?search_string=' + args.search)
+        xpath = "//ShowRouteTableSummary/name"
+        if args.family != 'all':
+            xpath = "//ShowRouteTableSummary[contains(name, '%s.0')]/name" % args.family
+
+        self.IST.printText(xpath)
 
     def SnhShowRoute(self, args):
         path = 'Snh_ShowRouteReq?routing_table=' + args.table + \
