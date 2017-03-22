@@ -2,14 +2,14 @@
 
 # Author        : Yan Chen <vcheny@outlook.com>
 # Platform      : Contrail 2.22+
-version = '1.0.3'
-# Date          : 2016-07-28
+version = '1.0.4'
+# Date          : 2017-03-21
 
 # This script provides a Contrail CLI command mainly for troublelshooting prupose.
 # It retrieves XML output from introspect services provided by Contrail main components
 # e.g. control, config and comptue(vrouter) nodes and makes them CLI friendly.
 
-import sys
+import sys, os
 import argparse
 import socket, struct
 from urllib2 import urlopen, URLError, HTTPError
@@ -86,7 +86,16 @@ class Introspec:
     # print the introspect output in a table. args lists interested fields.
     def printTbl(self, xpathExpr, *args):
 
-        fields = args if len(args) else [ e.tag for e in self.output_etree[0].xpath(xpathExpr)[0]]
+        #fields = args if len(args) else [ e.tag for e in self.output_etree[0].xpath(xpathExpr)[0]]
+
+        if len(args):
+            fields = args
+        else:
+            elist = self.output_etree[0].xpath(xpathExpr)
+            if len(elist):
+                fields = [ e.tag for e in elist[0]]
+            else:
+                return
 
         tbl = PrettyTable(fields)
         tbl.align = 'l'
@@ -678,9 +687,13 @@ class Control_CLI(Contrail_CLI):
         parser_ifmap_xmpp.add_argument('-t', '--type', choices=['node', 'link', 'all'], default='all', help='IFMAP data types')
         parser_ifmap_xmpp.set_defaults(func=self.SnhXmppClient)
 
+        parser_ifmap_tbl = parser_ifmap.add_parser('table', help='IFMAP table  info')
+        parser_ifmap_tbl.add_argument('-t', '--table', default='', help='ifmap table e.g. access-control-list, security-group etc')
+        parser_ifmap_tbl.add_argument('-s', '--search', default='', help='fq_node_name')
+        parser_ifmap_tbl.set_defaults(func=self.SnhIFMapTableShow)
+
         parser_ifmap_node = parser_ifmap.add_parser('node', help='IFMAP node data info')
         parser_ifmap_node.add_argument('name', nargs='?', help='fq_node_name')
-        parser_ifmap_node.add_argument('-s', '--search', help='fq_node_name')
         parser_ifmap_node.set_defaults(func=self.SnhIFMapNodeShow)
 
         parser_ifmap_link = parser_ifmap.add_parser('link', help='IFMAP link data info')
@@ -763,6 +776,11 @@ class Control_CLI(Contrail_CLI):
                     self.IST.showSCRoute('//ShowServicechainInfo')
             else:
                 self.IST.printTbl('//ShowServicechainInfo', 'src_virtual_network', 'dest_virtual_network', 'service_instance', 'src_rt_instance', 'dest_rt_instance', 'state')
+
+    def SnhIFMapTableShow(self, args):
+        self.IST.get('Snh_IFMapTableShowReq?table_name=' + args.table + '&search_string=' + args.search)
+        #self.IST.printTbl('//IFMapNodeShowInfo', 'node_name', 'interests', 'advertised', 'dbentryflags', 'last_modified', 'neighbors')
+        self.IST.printTbl('//IFMapNodeShowInfo', 'node_name', 'interests', 'advertised', 'dbentryflags', 'last_modified')
 
     def SnhIFMapLinkShow(self, args):
         self.IST.get('Snh_IFMapLinkTableShowReq?search_string=' + args.search)
@@ -910,6 +928,12 @@ class vRouter_CLI(Contrail_CLI):
         parser_hc = self.subparser.add_parser('hc', help='Health Check info')
         parser_hc.add_argument('name', nargs='?', default='', help='HC name')
         parser_hc.set_defaults(func=self.SnhHealthCheck)
+
+        parser_ifmap = self.subparser.add_parser('ifmap', help='IFMAP info')
+        parser_ifmap.add_argument('-t', '--table', default='', help='Table names. e.g. virtual-router, virtual-machine-interface, type:virtual-machine, instance-ip')
+        parser_ifmap.add_argument('-n', '--node', default='', help='Node sub string')
+        parser_ifmap.add_argument('-l', '--link', default='', help='Link sub string')
+        parser_ifmap.set_defaults(func=self.SnhShowIFMap)
 
         parser_baas = self.subparser.add_parser('baas', help='Bgp As A Service info')
         parser_baas.set_defaults(func=self.SnhBaaS)
@@ -1132,6 +1156,11 @@ class vRouter_CLI(Contrail_CLI):
         self.IST.get('Snh_BgpAsAServiceSandeshReq')
         self.IST.printTbl("//BgpAsAServiceSandeshList")
 
+    def SnhShowIFMap(self, args):
+        path = 'Snh_ShowIFMapAgentReq?table_name=' + args.table + '&node_sub_string=' + args.node + "&link_type_sub_string=" + args.link
+        self.IST.get(path)
+        self.IST.printText("//element")
+
 
 class Collector_CLI(Contrail_CLI):
 
@@ -1278,8 +1307,8 @@ def main():
         print version
         sys.exit()
 
-    host = None
-    port = None
+    host = os.environ.get('INTROSPECT_HOST', None)
+    port = os.environ.get('INTROSPECT_PORT', None)
 
     try:
         host = argv[argv.index('--host') + 1]
@@ -1296,6 +1325,9 @@ def main():
     except ValueError:
         max_width = 60
         pass
+
+    if host:
+        print "Introspect Host: " + host
 
     global debug
     if '--debug' in argv:
