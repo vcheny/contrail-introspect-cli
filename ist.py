@@ -24,64 +24,75 @@ class Introspec:
     output_etree = []
     tbl_col_max_width = 60
 
-    def __init__ (self, host, port, max_width):
+    def __init__ (self, host, port, filename, max_width):
         self.host_url = "http://" + host + ":" + str(port) + "/"
         self.tbl_col_max_width = int(max_width)
+        self.filename = filename
 
     # get instrosepc output
     def get (self, path):
 
         self.output_etree = []
 
-        while True:
-            url = self.host_url + path.replace(' ', '%20')
-            if debug: print "DEBUG: retriving url " + url
+        # load xml output from given file
+        if self.filename:
             try:
-              response = urlopen(url)
-            except HTTPError as e:
-                print 'The server couldn\'t fulfill the request.'
-                print 'URL: ' + url
-                print 'Error code: ', e.code
+                print "Loadding from introspect xml " + self.filename
+                self.output_etree.append(etree.parse(self.filename))
+            except Exception as inst:
+                print "ERROR: parsing " + self.filename + " failed"
+                print inst
                 sys.exit(1)
-            except URLError as e:
-                print 'Failed to reach destination'
-                print 'URL: ' + url
-                print 'Reason: ', e.reason
-                sys.exit(1)
-            else:
-                ISOutput = response.read()
-                response.close()
-
-            self.output_etree.append(etree.fromstring(ISOutput))
-
-            if 'Snh_PageReq?x=' in path:
-                break
-
-            # some routes output from vrouter may have pagination
-            pagination = self.output_etree[-1].xpath("//Pagination/req/PageReqData")
-            if len(pagination):
-                if (pagination[0].find("next_page").text is not None):
-                    all = pagination[0].find("all").text
-                    if(all is not None):
-                        path = 'Snh_PageReq?x=' + all
-                        self.output_etree = []
-                        continue
-                    else:
-                        print "Warning: all page in pagination is empty!"
-                        break
+        else:
+            while True:
+                url = self.host_url + path.replace(' ', '%20')
+                if debug: print "DEBUG: retrieving url " + url
+                try:
+                  response = urlopen(url)
+                except HTTPError as e:
+                    print 'The server couldn\'t fulfill the request.'
+                    print 'URL: ' + url
+                    print 'Error code: ', e.code
+                    sys.exit(1)
+                except URLError as e:
+                    print 'Failed to reach destination'
+                    print 'URL: ' + url
+                    print 'Reason: ', e.reason
+                    sys.exit(1)
                 else:
+                    ISOutput = response.read()
+                    response.close()
+
+                self.output_etree.append(etree.fromstring(ISOutput))
+
+                if 'Snh_PageReq?x=' in path:
                     break
 
-            next_batch = self.output_etree[-1].xpath("//next_batch")
+                # some routes output from vrouter may have pagination
+                pagination = self.output_etree[-1].xpath("//Pagination/req/PageReqData")
+                if len(pagination):
+                    if (pagination[0].find("next_page").text is not None):
+                        all = pagination[0].find("all").text
+                        if(all is not None):
+                            path = 'Snh_PageReq?x=' + all
+                            self.output_etree = []
+                            continue
+                        else:
+                            print "Warning: all page in pagination is empty!"
+                            break
+                    else:
+                        break
 
-            if not len(next_batch):
-                break
+                next_batch = self.output_etree[-1].xpath("//next_batch")
 
-            if (next_batch[0].text and next_batch[0].attrib['link']):
-                path = 'Snh_' + next_batch[0].attrib['link'] + '?x=' + next_batch[0].text
-            else:
-                break
-        if debug: print "instrosepct get completes\n"
+                if not len(next_batch):
+                    break
+
+                if (next_batch[0].text and next_batch[0].attrib['link']):
+                    path = 'Snh_' + next_batch[0].attrib['link'] + '?x=' + next_batch[0].text
+                else:
+                    break
+                if debug: print "instrosepct get completes\n"
 
     # print the introspect output in a table. args lists interested fields.
     def printTbl(self, xpathExpr, *args):
@@ -411,7 +422,8 @@ class Introspec:
 
     def showSCRoute(self, xpathExpr):
 
-        fields = ['src_virtual_network', 'dest_virtual_network', 'service_instance', 'state', 'connected_route', 'more_specifics', 'ext_connecting_rt']
+        #fields = ['src_virtual_network', 'dest_virtual_network', 'service_instance', 'state', 'connected_route', 'more_specifics', 'ext_connecting_rt']
+        fields = ['service_instance', 'state', 'connected_route', 'more_specifics', 'ext_connecting_rt']
 
         tbl = PrettyTable(fields)
         tbl.align = 'l'
@@ -420,7 +432,7 @@ class Introspec:
         for tree in self.output_etree:
             for sc in tree.xpath(xpathExpr):
                 row = []
-                for field in fields[0:4]:
+                for field in fields[0:2]:
                     f = sc.find(field)
                     if f is not None:
                         if f.text:
@@ -481,12 +493,24 @@ class Introspec:
 
                 print "aggregate_enable:%s\n" % (sc.find("aggregate_enable").text)
 
+    def showMtree(self, xpathExpr):
+        fields = ['group', 'source', 'level0_forwarders', 'level1_forwarders']
+        for tree in self.output_etree:
+            for mtree in tree.xpath(xpathExpr):
+                print "%s: %s" % ('group', mtree.find('group').text)
+                print "%s: %s" % ('source', mtree.find('source').text)
+                print "level0_forwarders:"
+                # To print level0 tbl - TBD
+                print "level1_forwarders:"
+                # To print level1 tbl - TBD
+
 class Contrail_CLI:
 
-    def __init__(self, parser, host, port, max_width):
+    def __init__(self, parser, host, port, filename, max_width):
 
         parser.add_argument('--host', default=host, help="Introspect host(default='%(default)s')")
         parser.add_argument('--port', default=port, help="Introspect port(default='%(default)s')")
+        parser.add_argument('--filename', default="", help="Introspect output xml filename")
         self.subparser = parser.add_subparsers()
 
         parser_status = self.subparser.add_parser('status', help='show node/component status')
@@ -504,7 +528,7 @@ class Contrail_CLI:
         parser_uve.add_argument('name', nargs='?', default='list', help='UVE type name, default: list available type names')
         parser_uve.set_defaults(func=self.SnhUve)
 
-        self.IST = Introspec(host, port, max_width)
+        self.IST = Introspec(host, port, filename, max_width)
 
     def SnhNodeStatus(self, args):
         self.IST.get('Snh_SandeshUVECacheReq?tname=NodeStatus')
@@ -537,21 +561,21 @@ class Contrail_CLI:
 
 class Config_API_CLI(Contrail_CLI):
 
-    def __init__(self, parser, host, port, max_width):
+    def __init__(self, parser, host, port, filename, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8084' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, filename, max_width)
 
 class Config_SCH_CLI(Contrail_CLI):
 
-    def __init__(self, parser, host, port, max_width):
+    def __init__(self, parser, host, port, filename, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8087' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, filename, max_width)
 
         self.parse_args()
 
@@ -596,12 +620,12 @@ class Config_SCH_CLI(Contrail_CLI):
 
 class Config_SVC_CLI(Contrail_CLI):
 
-    def __init__(self, parser, host, port, max_width):
+    def __init__(self, parser, host, port, filename, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8088' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, filename, max_width)
 
         self.parse_args()
 
@@ -620,12 +644,12 @@ class Config_SVC_CLI(Contrail_CLI):
 
 class Control_CLI(Contrail_CLI):
 
-    def __init__(self, parser, host, port, max_width):
+    def __init__(self, parser, host, port, filename, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8083' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, filename, max_width)
         self.parse_args()
 
     def parse_args(self):
@@ -663,6 +687,10 @@ class Control_CLI(Contrail_CLI):
         parser_route.add_argument('-t', '--table', default='', help='Show routes in given table')
         parser_route.set_defaults(func=self.SnhShowRoute)
 
+        parser_mcast = self.subparser.add_parser('mcast', help='Show multicast managers')
+        parser_mcast.add_argument('search', nargs='?', default='', help='Search string')
+        parser_mcast.add_argument('-d', '--detail', action="store_true", help='Show mcast tree for given network')
+        parser_mcast.set_defaults(func=self.ShowMulticastManager)
 
 
         ## XMPP
@@ -731,6 +759,14 @@ class Control_CLI(Contrail_CLI):
         parser_rt.add_argument('search', nargs='?', default='', help='search string')
         parser_rt.add_argument('-d', '--detail', action="store_true", default=False, help='Display detailed output')
         parser_rt.set_defaults(func=self.SnhShowRtGroupReq)
+
+    def ShowMulticastManager(self, args):
+        if args.detail and args.search:
+            self.IST.get('Snh_ShowMulticastManagerDetailReq?x=' + args.search)
+            self.IST.showMtree('//ShowMulticastTree')
+        else:
+            self.IST.get('Snh_ShowMulticastManagerReq?search_string=' + args.search)
+            self.IST.printTbl('//ShowMulticastManager')
 
     def SnhShowRtGroupReq(self, args):
         if args.detail:
@@ -876,12 +912,12 @@ class Control_CLI(Contrail_CLI):
         self.IST.showRoute_CTR(args.address, args.protocol, args.table, args.source, args.family, args.last, mode)
 
 class vRouter_CLI(Contrail_CLI):
-    def __init__(self, parser, host, port, max_width):
+    def __init__(self, parser, host, port, filename, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8085' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, filename, max_width)
         self.parse_args()
 
     def parse_args(self):
@@ -1150,7 +1186,7 @@ class vRouter_CLI(Contrail_CLI):
             self.IST.printText("//HealthCheckSandeshData[contains(name,'%s')]//HealthCheckInstanceSandeshData/*" % args.name)
         else:
             self.IST.printTbl("//HealthCheckSandeshData", "uuid", "name", "monitor_type",
-                "http_method", "url_path", "expected_codes", "delay", "timeout", "max_retries")
+                "http_method", "url_path", "expected_codes", "delay", "timeout", "max_ies")
 
     def SnhBaaS(self,args):
         self.IST.get('Snh_BgpAsAServiceSandeshReq')
@@ -1161,15 +1197,14 @@ class vRouter_CLI(Contrail_CLI):
         self.IST.get(path)
         self.IST.printText("//element")
 
-
 class Collector_CLI(Contrail_CLI):
 
-    def __init__(self, parser, host, port, max_width):
+    def __init__(self, parser, host, port, filename, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8089' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, filename, max_width)
 
         self.parse_args()
 
@@ -1197,12 +1232,12 @@ class Collector_CLI(Contrail_CLI):
         self.IST.printText("//RedisUveInfo/*")
 
 class Analytics_CLI(Contrail_CLI):
-    def __init__(self, parser, host, port, max_width):
+    def __init__(self, parser, host, port, filename, max_width):
 
         IShost = 'localhost' if host is None else host
         ISport ='8090' if port is None else port
 
-        Contrail_CLI.__init__(self, parser, IShost, ISport, max_width)
+        Contrail_CLI.__init__(self, parser, IShost, ISport, filename, max_width)
 
 # class Query_Engine_CLI(Contrail_CLI):
 #     def __init__(self, parser):
@@ -1309,6 +1344,7 @@ def main():
 
     host = os.environ.get('INTROSPECT_HOST', None)
     port = os.environ.get('INTROSPECT_PORT', None)
+    filename = ""
 
     try:
         host = argv[argv.index('--host') + 1]
@@ -1321,10 +1357,19 @@ def main():
         pass
 
     try:
+        filename = argv[argv.index('--file') + 1]
+    except ValueError:
+        pass
+
+    try:
         max_width = argv[argv.index('--max-width') + 1]
     except ValueError:
         max_width = 60
         pass
+
+    if filename and not os.path.isfile(filename):
+        print "Failed to find " + filename
+        sys.exit(1)
 
     if host:
         print "Introspect Host: " + host
@@ -1341,25 +1386,25 @@ def main():
     roleparsers = parser.add_subparsers()
 
     parse_vr = roleparsers.add_parser('vr', help='Show vRouter info')
-    vRouter_CLI(parse_vr, host, port, max_width)
+    vRouter_CLI(parse_vr, host, port, filename, max_width)
 
     parse_ctr = roleparsers.add_parser('ctr', help='Show Control node info')
-    Control_CLI(parse_ctr, host, port, max_width)
+    Control_CLI(parse_ctr, host, port, filename, max_width)
 
     parse_cfg_api = roleparsers.add_parser('cfg-api', help='Show contrail-api info')
-    Config_API_CLI(parse_cfg_api, host, port, max_width)
+    Config_API_CLI(parse_cfg_api, host, port, filename, max_width)
 
     parse_cfg_sch = roleparsers.add_parser('cfg-sch', help='Show contrail-schema info')
-    Config_SCH_CLI(parse_cfg_sch, host, port, max_width)
+    Config_SCH_CLI(parse_cfg_sch, host, port, filename, max_width)
 
     parse_cfg_svc = roleparsers.add_parser('cfg-svc', help='Show contrail-svc-monitor info')
-    Config_SVC_CLI(parse_cfg_svc, host, port, max_width)
+    Config_SVC_CLI(parse_cfg_svc, host, port, filename, max_width)
 
     parse_collector = roleparsers.add_parser('collector', help='Show contrail-collector info')
-    Collector_CLI(parse_collector, host, port, max_width)
+    Collector_CLI(parse_collector, host, port, filename, max_width)
 
     parse_analytics = roleparsers.add_parser('analytics', help='Show contrail-analytics-api info')
-    Analytics_CLI(parse_analytics, host, port, max_width)
+    Analytics_CLI(parse_analytics, host, port, filename, max_width)
 
     # parse_qe = roleparsers.add_parser('qe', help='Show contrail-query-engine info')
     # Query_Engine_CLI(parse_qe)
