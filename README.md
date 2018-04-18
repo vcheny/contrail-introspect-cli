@@ -1,12 +1,12 @@
 # contrail-introspect-cli
-This script provides a Contrail CLI command mainly for troublelshooting prupose. It retrieves XML output from introspect services provided by Contrail main components e.g. control, config and comptue(vrouter) nodes and makes them CLI friendly.
+This script provides a Contrail CLI command mainly for troubleshooting purpose. It retrieves XML output from introspect services provided by Contrail main components e.g. control, config and compute(vrouter) nodes and makes them CLI friendly.
 
 Contrail 2.22+ is supported.
 
 Note: Entire scripts is kept in one single file intentionally for easy use.
 
 ## How to run
-* Just like a regular pythoin script
+* Just like a regular python script
 * It can run remotely or directly from control/compute nodes
 * Python lib lxml and prettytable are required
 
