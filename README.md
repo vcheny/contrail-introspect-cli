@@ -1,14 +1,13 @@
 # contrail-introspect-cli
-This script provides a Contrail CLI command mainly for troubleshooting purpose. It retrieves XML output from introspect services provided by Contrail main components e.g. control, config and compute(vrouter) nodes and makes them CLI friendly.
+This script provides a Contrail CLI command mainly for troublelshooting prupose. It retrieves XML output from introspect services provided by Contrail main components e.g. control, config and comptue(vrouter) nodes and makes them CLI friendly.
 
 Contrail 2.22+ is supported.
 
 Note: Entire scripts is kept in one single file intentionally for easy use.
 
-## How to run
-* Just like a regular python script
-* It can run remotely or directly from control/compute nodes
-* Python lib lxml and prettytable are required
+## Dependencies
+* lxml
+* prettytable
 
 ## Usage
 
@@ -16,68 +15,97 @@ Use ```-h``` to list possible command options
 
 ```
 root@comp45:~# ist -h
-usage: ist [-h] [--version] [--debug] [--max-width MAX_WIDTH]
-           {vr,ctr,cfg-api,cfg-sch,cfg-svc,collector,analytics} ...
+usage: ist [-h] [--version] [--debug] [--host HOST] [--port PORT]
+           {alarm_gen,analytics,cfg_api,cfg_disc,cfg_schema,cfg_svcmon,collector,ctr,dm,dns,nodemgr_analytics,nodemgr_cfg,nodemgr_ctr,nodemgr_db,nodemgr_vr,qe,vr}
+           ...
 
 A script to make Contrail Introspect output CLI friendly.
 
 positional arguments:
-  {vr,ctr,cfg-api,cfg-sch,cfg-svc,collector,analytics}
-    vr                  Show vRouter info
-    ctr                 Show Control node info
-    cfg-api             Show contrail-api info
-    cfg-sch             Show contrail-schema info
-    cfg-svc             Show contrail-svc-monitor info
-    collector           Show contrail-collector info
-    analytics           Show contrail-analytics-api info
+  {alarm_gen,analytics,cfg_api,cfg_disc,cfg_schema,cfg_svcmon,collector,ctr,dm,dns,nodemgr_analytics,nodemgr_cfg,nodemgr_ctr,nodemgr_db,nodemgr_vr,qe,vr}
+    alarm_gen           contrail-alarm-gen
+    analytics           contrail-analytics-api
+    cfg_api             contrail-api
+    cfg_disc            contrail-discovery
+    cfg_schema          contrail-schema
+    cfg_svcmon          contrail-svc-monitor
+    collector           contrail-collector
+    ctr                 contrail-control
+    dm                  contrail-device-manager
+    dns                 contrail-dns
+    nodemgr_analytics   contrail-analytics-nodemgr
+    nodemgr_cfg         contrail-config-nodemgr
+    nodemgr_ctr         contrail-control-nodemgr
+    nodemgr_db          contrail-database-nodemgr
+    nodemgr_vr          contrail-vrouter-nodemgr
+    qe                  contrail-query-engine
+    vr                  contrail-vrouter-agent
 
 optional arguments:
   -h, --help            show this help message and exit
-  --version             Show script version
-  --debug               debug mode
-  --max-width MAX_WIDTH
-                        max width per column
+  --version             Script version
+  --debug               Verbose mode
+  --host HOST           Introspect host address. Default: localhost
+  --port PORT           Introspect port number
 
 root@comp45:~# ist vr -h
-usage: ist vr [-h] [-H HOST] [-P PORT]
-              {status,cpu,trace,uve,intf,vn,vrf,route,sg,acl,xmpp,xmpp-dns,stats,service}
+usage: ist vr [-h]
+              {status,cpu,trace,uve,intf,vn,vrf,route,sg,acl,hc,ifmap,baas,xmpp,xmpp-dns,stats,service,si,nh,vm,mpls,vrfassign,linklocal,vxlan,mirror}
               ...
 
 positional arguments:
-  {status,cpu,trace,uve,intf,vn,vrf,route,sg,acl,xmpp,xmpp-dns,stats,service}
-    status              show node/component status
-    cpu                 Show CPU load info
-    trace               Show Sandesh trace buffer
-    uve                 Show Sandesh UVE cache
+  {status,cpu,trace,uve,intf,vn,vrf,route,sg,acl,hc,ifmap,baas,xmpp,xmpp-dns,stats,service,si,nh,vm,mpls,vrfassign,linklocal,vxlan,mirror}
+    status              Node/component status
+    cpu                 CPU load info
+    trace               Sandesh trace buffer
+    uve                 Sandesh UVE cache
     intf                Show vRouter interfaces
     vn                  Show Virtual Network
     vrf                 Show VRF
     route               Show routes
     sg                  Show Security Groups
     acl                 Show ACL info
+    hc                  Health Check info
+    ifmap               IFMAP info
+    baas                Bgp As A Service info
     xmpp                Show Agent XMPP connections (route&config) status
     xmpp-dns            Show Agent XMPP connections (dns) status
     stats               Show Agent stats
     service             Service related info
+    si                  Service instance info
+    nh                  NextHop info
+    vm                  VM info
+    mpls                MPLS info
+    vrfassign           VrfAssign info
+    linklocal           LinkLocal service info
+    vxlan               vxlan info
+    mirror              mirror info
 
 optional arguments:
   -h, --help            show this help message and exit
-  --host HOST           Introspect host(default='localhost')
-  --port PORT           Introspect port(default='8085')
 
 root@comp45:~# ist vr intf -h
-usage: ist vr intf [-h] [-u UUID] [-v VN] [-m MAC] [-i IPV4] [-d] [name]
+usage: ist vr intf [-h] [-f {table,text}] [-c [COLUMNS [COLUMNS ...]]]
+                   [--max_width MAX_WIDTH] [-u UUID] [-v VN] [-n NAME]
+                   [-m MAC] [-i IPV4]
+                   [search]
 
 positional arguments:
-  name                  Interface name
+  search                Search string
 
 optional arguments:
   -h, --help            show this help message and exit
+  -f {table,text}, --format {table,text}
+                        Output format.
+  -c [COLUMNS [COLUMNS ...]], --columns [COLUMNS [COLUMNS ...]]
+                        Column(s) to include
+  --max_width MAX_WIDTH
+                        Max width per column
   -u UUID, --uuid UUID  Interface uuid
   -v VN, --vn VN        Virutal network
+  -n NAME, --name NAME  Interface name
   -m MAC, --mac MAC     VM mac address
   -i IPV4, --ipv4 IPV4  VM IP address
-  -d, --detail          Display detailed output
 ```
 
 ## Examples
@@ -85,157 +113,187 @@ optional arguments:
 ### How to run
 * from local
 ```
-ist {vr,ctr,cfg-api,cfg-sch, cfg-svc,collector,analytics}
-
-root@cont201:~# ist ctr status
+root@cont101:~# ist ctr status
 module_id: contrail-control
 state: Functional
+description
++-----------+-------------+-----------------------+--------+--------------------------------------+
+| type      | name        | server_addrs          | status | description                          |
++-----------+-------------+-----------------------+--------+--------------------------------------+
+| IFMap     | IFMapServer |   172.18.101.103:8443 | Up     | Connection with IFMap Server (irond) |
+| Collector | n/a         |   172.18.101.101:8086 | Up     | Established                          |
+| Discovery | Collector   |   172.18.101.100:5998 | Up     | SubscribeResponse                    |
+| Discovery | IfmapServer |   172.18.101.100:5998 | Up     | SubscribeResponse                    |
+| Discovery | xmpp-server |   172.18.101.100:5998 | Up     | Publish Response - HeartBeat         |
++-----------+-------------+-----------------------+--------+--------------------------------------+
 ```
 * from remote
 ```
-ist {vr,ctr,cfg-api,cfg-sch, cfg-svc} -H <Node IP>
-
-[cheny-mbp:~]$ ist ctr --host cont201 status
+[cheny-mbp:~]$ ist --host cont101 ctr status
+Introspect Host: cont101
 module_id: contrail-control
 state: Functional
+description
++-----------+-------------+-----------------------+--------+--------------------------------------+
+| type      | name        | server_addrs          | status | description                          |
++-----------+-------------+-----------------------+--------+--------------------------------------+
+| IFMap     | IFMapServer |   172.18.101.103:8443 | Up     | Connection with IFMap Server (irond) |
+| Collector | n/a         |   172.18.101.101:8086 | Up     | Established                          |
+| Discovery | Collector   |   172.18.101.100:5998 | Up     | SubscribeResponse                    |
+| Discovery | IfmapServer |   172.18.101.100:5998 | Up     | SubscribeResponse                    |
+| Discovery | xmpp-server |   172.18.101.100:5998 | Up     | Publish Response - HeartBeat         |
++-----------+-------------+-----------------------+--------+--------------------------------------+
 ```
 
 ### vRouter commands
 
 * Interface related
 ```
-root@comp45:~# ist vr intf -h
-usage: ist vr intf [-h] [-u UUID] [-v VN] [-m MAC] [-i IPV4] [-d] [name]
+root@comp155:~# ist vr intf
++-------+----------------+--------+-------------------+------------+---------------+---------+----------------------------+
+| index | name           | active | mac_addr          | ip_addr    | mdata_ip_addr | vm_name | vn_name                    |
++-------+----------------+--------+-------------------+------------+---------------+---------+----------------------------+
+| 0     | eth1           | Active | n/a               | n/a        | n/a           | n/a     | n/a                        |
+| 4     | tap5a233e07-94 | Active | 02:5a:23:3e:07:94 | 20.20.20.3 | 169.254.0.4   | vm_x    | default-domain:admin:vn_xy |
+| 5     | tap7268190b-3f | Active | 02:72:68:19:0b:3f | 10.10.10.3 | 169.254.0.5   | vm_c    | default-domain:admin:vn_c  |
+| 3     | tap844fc340-2b | Active | 02:84:4f:c3:40:2b | 1.2.3.3    | 169.254.0.3   | vm1     | default-domain:admin:vn1   |
+| 1     | vhost0         | Active | n/a               | n/a        | n/a           | n/a     | n/a                        |
+| 2     | pkt0           | Active | n/a               | n/a        | n/a           | n/a     | n/a                        |
++-------+----------------+--------+-------------------+------------+---------------+---------+----------------------------+
+
+root@comp155:~# ist vr intf -h
+usage: ist vr intf [-h] [-f {table,text}] [-c [COLUMNS [COLUMNS ...]]]
+                   [--max_width MAX_WIDTH] [-u UUID] [-v VN] [-n NAME]
+                   [-m MAC] [-i IPV4]
+                   [search]
 
 positional arguments:
-  name                  Interface name
+  search                Search string
 
 optional arguments:
   -h, --help            show this help message and exit
+  -f {table,text}, --format {table,text}
+                        Output format.
+  -c [COLUMNS [COLUMNS ...]], --columns [COLUMNS [COLUMNS ...]]
+                        Column(s) to include
+  --max_width MAX_WIDTH
+                        Max width per column
   -u UUID, --uuid UUID  Interface uuid
   -v VN, --vn VN        Virutal network
+  -n NAME, --name NAME  Interface name
   -m MAC, --mac MAC     VM mac address
   -i IPV4, --ipv4 IPV4  VM IP address
-  -d, --detail          Display detailed output
 
-[cheny-mbp:~]$ ist vr -H comp45 intf tap
-+-------+----------------+--------+-------------------+---------------+---------------+------------+----------------------------+
-| index | name           | active | mac_addr          | ip_addr       | mdata_ip_addr | vm_name    | vn_name                    |
-+-------+----------------+--------+-------------------+---------------+---------------+------------+----------------------------+
-| 4     | tap2df2ce68-23 | Active | 02:76:c4:8a:88:1d | 10.10.10.4    | 169.254.0.4   | VSRX-FW001 | default-domain:admin:VN-L  |
-| 5     | tapa66c059a-73 | Active | 02:d7:b7:2f:1b:b0 | 20.20.20.4    | 169.254.0.5   | VSRX-FW001 | default-domain:admin:VN-R  |
-| 3     | tapd47cd238-33 | Active | 02:29:49:5d:e5:d3 | 100.100.100.3 | 169.254.0.3   | VSRX-FW001 | default-domain:admin:Dummy |
-+-------+----------------+--------+-------------------+---------------+---------------+------------+----------------------------+
-
-root@comp45:~# ist vr intf -v default-domain:admin:VN-L
-+-------+----------------+--------+-------------------+------------+---------------+------------+---------------------------+
-| index | name           | active | mac_addr          | ip_addr    | mdata_ip_addr | vm_name    | vn_name                   |
-+-------+----------------+--------+-------------------+------------+---------------+------------+---------------------------+
-| 4     | tap2df2ce68-23 | Active | 02:76:c4:8a:88:1d | 10.10.10.4 | 169.254.0.4   | VSRX-FW001 | default-domain:admin:VN-L |
-+-------+----------------+--------+-------------------+------------+---------------+------------+---------------------------+
-
-root@comp45:~# ist vr intf tap2df2ce68-23 -d
+root@comp155:~# ist vr intf -v default-domain:admin:vn1 -f text
 ItfSandeshData
-  index: 4
-  name: tap2df2ce68-23
-  uuid: 2df2ce68-233e-4f5b-a8f7-e0f8f55ccf31
-  vrf_name: default-domain:admin:VN-L:VN-L
+  index: 3
+  name: tap844fc340-2b
+  uuid: 844fc340-2b68-4866-87aa-9aee3d45f2fd
+  vrf_name: default-domain:admin:vn1:vn1
   active: Active
+  ipv4_active: Active
+  l2_active: L2 Active
+  ip6_active: Ipv6 Inactive < no-ipv6-addr  >
+  health_check_active: Active
   dhcp_service: Enable
   dns_service: Enable
   type: vport
-  label: 21
-  vn_name: default-domain:admin:VN-L
-  vm_uuid: 5075756e-ae49-4ced-88f8-46af16bfce3f
-  vm_name: VSRX-FW001
-  ip_addr: 10.10.10.4
-  mac_addr: 02:76:c4:8a:88:1d
+  label: 17
+  l2_label: 18
+  vxlan_id: 4
+  vn_name: default-domain:admin:vn1
+  vm_uuid: 00ff4531-41ca-485d-8584-f0218d5f930c
+  vm_name: vm1
+  ip_addr: 1.2.3.3
+  mac_addr: 02:84:4f:c3:40:2b
   policy: Enable
   fip_list
-  mdata_ip_addr: 169.254.0.4
+      FloatingIpSandeshList
+        ip_addr: 10.85.190.131
+        vrf_name: default-domain:admin:public:public
+        installed: Y
+        fixed_ip: 1.2.3.3
+  mdata_ip_addr: 169.254.0.3
   service_vlan_list
-  os_ifindex: 22
+  os_ifindex: 11
   fabric_port: NotFabricPort
   alloc_linklocal_ip: LL-Enable
   analyzer_name
-  config_name: default-domain:admin:default-domain__admin__VSRX-FW__1__left__2
+  config_name: default-domain:admin:844fc340-2b68-4866-87aa-9aee3d45f2fd
   sg_uuid_list
       VmIntfSgUuid
-        sg_uuid: 8617f504-d10f-43dc-a0cc-93c8bb670f5f
-  l2_label: 22
-  vxlan_id: 5
+        sg_uuid: 80e317f8-39f1-4825-a432-fb440184cf4b
   static_route_list
-  l2_active: L2 Active
-  vm_project_uuid: 513f8055-4f25-4f24-b9af-d542ee95c57f
+  vm_project_uuid: f5d82829-4cee-4498-9064-9a8c50643c2f
   admin_state: Enabled
-  flow_key_idx: 34
+  flow_key_idx: 20
   allowed_address_pair_list
   ip6_addr: ::
-  ip6_active: Ipv6 Inactive < no-ipv6-addr  >
   local_preference: 0
   tx_vlan_id: -1
   rx_vlan_id: -1
   parent_interface
+  subnet: --NA--
   sub_type: Tap
-  vrf_assign_acl_uuid: 2df2ce68-233e-4f5b-a8f7-e0f8f55ccf31
+  vrf_assign_acl_uuid: --NA--
   vmi_type: Virtual Machine
   transport: Ethernet
   logical_interface_uuid: 00000000-0000-0000-0000-000000000000
   flood_unknown_unicast: false
   physical_device
   physical_interface
-  ipv4_active: Active
   fixed_ip4_list
-      10.10.10.4
+      1.2.3.3
   fixed_ip6_list
   fat_flow_list
-  ```
+  metadata_ip_active: Active
+  service_health_check_ip: 0.0.0.0
+  alias_ip_list
+  drop_new_flows: false
+
+root@comp155:~# ist vr intf -v default-domain:admin:vn1 -c uuid name active policy flood_unknown_unicast
++--------------------------------------+----------------+--------+--------+-----------------------+
+| uuid                                 | name           | active | policy | flood_unknown_unicast |
++--------------------------------------+----------------+--------+--------+-----------------------+
+| 844fc340-2b68-4866-87aa-9aee3d45f2fd | tap844fc340-2b | Active | Enable | false                 |
++--------------------------------------+----------------+--------+--------+-----------------------+
+```
 
 * vrf related
 
 ```
-root@comp45:~# ist vr vrf -h
-usage: ist vr vrf [-h] [-d] [name]
+root@comp155:~# ist vr vrf -h
+usage: ist vr vrf [-h] [-f {table,text}] [-c [COLUMNS [COLUMNS ...]]]
+                  [--max_width MAX_WIDTH]
+                  [name]
 
 positional arguments:
-  name          VRF name
+  name                  VRF name
 
 optional arguments:
-  -h, --help    show this help message and exit
-  -d, --detail  Display detailed output
-
-root@comp76:~# ist vr vrf
-+--------------------------------------------------------------+---------+---------+---------+-----------+----------+---------------------------+
-| name                                                         | ucindex | mcindex | brindex | evpnindex | vxlan_id | vn                        |
-+--------------------------------------------------------------+---------+---------+---------+-----------+----------+---------------------------+
-| default-domain:admin:MGT:MGT                                 | 2       | 2       | 2       | 2         | 14       | default-domain:admin:MGT  |
-| default-domain:admin:VN-L:VN-L                               | 3       | 3       | 3       | 3         | 5        | default-domain:admin:VN-L |
-| default-domain:admin:VN-L:service-cc571e38-0cc7-42cc-b0d2    | 4       | 4       | 4       | 4         | 0        | N/A                       |
-| -96dc3b77df2e-default-domain_admin_HairpinFW                 |         |         |         |           |          |                           |
-| default-domain:admin:VN-R:VN-R                               | 1       | 1       | 1       | 1         | 4        | default-domain:admin:VN-R |
-| default-domain:admin:VN-R:service-cc571e38-0cc7-42cc-b0d2    | 5       | 5       | 5       | 5         | 0        | N/A                       |
-| -96dc3b77df2e-default-domain_admin_HairpinFW                 |         |         |         |           |          |                           |
-| default-domain:default-project:ip-fabric:__default__         | 0       | 0       | 0       | 0         | 0        | N/A                       |
-+--------------------------------------------------------------+---------+---------+---------+-----------+----------+---------------------------+
-
-root@comp76:~# ist vr vrf default-domain:admin:VN-L:VN-L -d
-VrfSandeshData
-  name: default-domain:admin:VN-L:VN-L
-  ucindex: 3
-  mcindex: 3
-  l2index: 3
-  source: Config;
-  uc6index: 3
-  vn: default-domain:admin:VN-L
-  table_label: -1
-  vxlan_id: 5
-  evpnindex: 3
-  brindex: 3
+  -h, --help            show this help message and exit
+  -f {table,text}, --format {table,text}
+                        Output format.
+  -c [COLUMNS [COLUMNS ...]], --columns [COLUMNS [COLUMNS ...]]
+                        Column(s) to include
+  --max_width MAX_WIDTH
+                        Max width per column
+root@comp155:~# ist vr vrf
++--------------------------------------+---------+---------+---------+-----------+----------+-----------------------------+
+| name                                 | ucindex | mcindex | brindex | evpnindex | vxlan_id | vn                          |
++--------------------------------------+---------+---------+---------+-----------+----------+-----------------------------+
+| default-domain:admin:public:public   | 2       | 2       | 2       | 2         | 5        | default-domain:admin:public |
+| default-domain:admin:vn1:vn1         | 1       | 1       | 1       | 1         | 4        | default-domain:admin:vn1    |
+| default-domain:admin:vn_c:vn_c       | 4       | 4       | 4       | 4         | 9        | default-domain:admin:vn_c   |
+| default-domain:admin:vn_xy:vn_xy     | 3       | 3       | 3       | 3         | 7        | default-domain:admin:vn_xy  |
+| default-domain:default-project:ip-   | 0       | 0       | 0       | 0         | 0        | N/A                         |
+| fabric:__default__                   |         |         |         |           |          |                             |
++--------------------------------------+---------+---------+---------+-----------+----------+-----------------------------+
 ```
 
 * route related
 ```
-root@comp45:~# ist vr route -h
+root@comp155:~# ist vr route -h
 usage: ist vr route [-h] [-v VRF] [-f {inet,inet6,bridge,layer2,evpn}]
                     [-p PREFIX] [-d] [-r]
                     [address]
@@ -253,143 +311,196 @@ optional arguments:
   -d, --detail          Display detailed output
   -r, --raw             Display raw output in plain text
 
-root@comp45:~# ist vr route -v 3
-10.10.10.0/24
+root@comp155:~# ist vr route -v 2
+  if nh.find("policy"):
+0.0.0.0/0
+    [10.173.150.152] pref:100
+     to f0:1c:2d:41:90:0 via MPLSoGRE dip:192.168.0.204 sip:10.173.150.155 label:27, nh_index:29 , nh_type:tunnel, nh_policy:, active_label:27, vxlan_id:0
+    [10.173.150.153] pref:100
+     to f0:1c:2d:41:90:0 via MPLSoGRE dip:192.168.0.204 sip:10.173.150.155 label:27, nh_index:29 , nh_type:tunnel, nh_policy:, active_label:27, vxlan_id:0
+10.85.190.128/29
     [Local] pref:100
-     nh_index:1 , nh_type:discard, nh_policy:disabled, active_label:-1, vxlan_id:0
-10.10.10.1/32
+     nh_index:1 , nh_type:discard, nh_policy:, active_label:-1, vxlan_id:0
+10.85.190.129/32
     [Local] pref:100
-     to 0:0:0:0:0:1 via pkt0, assigned_label:-1, nh_index:7 , nh_type:interface, nh_policy:disabled, active_label:-1, vxlan_id:0
-10.10.10.2/32
+     to 0:0:0:0:0:1 via pkt0, assigned_label:-1, nh_index:8 , nh_type:interface, nh_policy:, active_label:-1, vxlan_id:0
+10.85.190.130/32
     [Local] pref:100
-     to 0:0:0:0:0:1 via pkt0, assigned_label:-1, nh_index:7 , nh_type:interface, nh_policy:disabled, active_label:-1, vxlan_id:0
-10.10.10.3/32
-    [172.222.19.202] pref:200
-     to f0:1c:2d:43:ee:2d via MPLSoUDP dip:172.222.19.205 sip:172.222.45.2 label:17, nh_index:21 , nh_type:tunnel, nh_policy:disabled, active_label:17, vxlan_id:0
-    [172.222.19.203] pref:200
-     to f0:1c:2d:43:ee:2d via MPLSoUDP dip:172.222.19.205 sip:172.222.45.2 label:17, nh_index:21 , nh_type:tunnel, nh_policy:disabled, active_label:17, vxlan_id:0
-10.10.10.4/32
-    [172.222.19.202] pref:200
-     to 2:76:c4:8a:88:1d via tap2df2ce68-23, assigned_label:21, nh_index:34 , nh_type:interface, nh_policy:enabled, active_label:21, vxlan_id:0
-    [172.222.19.203] pref:200
-     to 2:76:c4:8a:88:1d via tap2df2ce68-23, assigned_label:21, nh_index:34 , nh_type:interface, nh_policy:enabled, active_label:21, vxlan_id:0
+     to 0:0:0:0:0:1 via pkt0, assigned_label:-1, nh_index:8 , nh_type:interface, nh_policy:, active_label:-1, vxlan_id:0
+10.85.190.131/32
+    [10.173.150.152] pref:200
+     to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:, active_label:17, vxlan_id:0
+    [10.173.150.153] pref:200
+     to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:, active_label:17, vxlan_id:0
     [LocalVmPort] pref:200
-     to 2:76:c4:8a:88:1d via tap2df2ce68-23, assigned_label:21, nh_index:34 , nh_type:interface, nh_policy:enabled, active_label:21, vxlan_id:0
-20.20.20.3/32
-    [172.222.19.202] pref:200
-     to 2:76:c4:8a:88:1d via tap2df2ce68-23, assigned_label:21, nh_index:34 , nh_type:interface, nh_policy:enabled, active_label:21, vxlan_id:0
-    [172.222.19.203] pref:200
-     to 2:76:c4:8a:88:1d via tap2df2ce68-23, assigned_label:21, nh_index:34 , nh_type:interface, nh_policy:enabled, active_label:21, vxlan_id:0
-20.20.20.4/32
-    [172.222.19.202] pref:200
-     to 2:76:c4:8a:88:1d via tap2df2ce68-23, assigned_label:21, nh_index:34 , nh_type:interface, nh_policy:enabled, active_label:21, vxlan_id:0
-    [172.222.19.203] pref:200
-     to 2:76:c4:8a:88:1d via tap2df2ce68-23, assigned_label:21, nh_index:34 , nh_type:interface, nh_policy:enabled, active_label:21, vxlan_id:0
-33.100.100.1/32
-    [172.222.19.202] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
-    [172.222.19.203] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
+     to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:, active_label:17, vxlan_id:0
+    [INET-EVPN] pref:100
+     nh_index:0 , nh_type:None, nh_policy:, active_label:-1, vxlan_id:0
 169.254.169.254/32
     [LinkLocal] pref:100
-     via vhost0, nh_index:6 , nh_type:receive, nh_policy:enabled, active_label:-1, vxlan_id:0
-200.200.200.0/24
-    [172.222.19.202] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
-    [172.222.19.203] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
+     via vhost0, nh_index:6 , nh_type:receive, nh_policy:, active_label:-1, vxlan_id:0
 
-root@comp45:~# ist vr route -v 3 -p 200.200.200.0/24
-200.200.200.0/24
-    [172.222.19.202] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
-    [172.222.19.203] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
-root@comp45:~# ist vr route 3 -p 200.200.200.0/24 -d
-200.200.200.0/24
-    [172.222.19.202] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
-     dest_vn:[], sg:[], communities:[]
-    [172.222.19.203] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
-     dest_vn:[], sg:[], communities:[]
+root@comp155:~# ist vr route -v 2 -p 10.85.190.131/32
+10.85.190.131/32
+ [10.173.150.152] pref:200
+  to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:enabled, active_label:17, vxlan_id:0
+ [10.173.150.153] pref:200
+  to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:enabled, active_label:17, vxlan_id:0
+ [LocalVmPort] pref:200
+  to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:enabled, active_label:17, vxlan_id:0
+ [INET-EVPN] pref:100
+  nh_index:0 , nh_type:None, nh_policy:, active_label:-1, vxlan_id:0
 
-root@comp45:~# ist vr route -v 3 -p 200.200.200.0/24 -r
-RouteUcSandeshData
-  src_ip: 200.200.200.0
-  src_plen: 24
-  src_vrf: default-domain:admin:VN-L:VN-L
-  path_list
-      PathSandeshData
-        nh
-          NhSandeshData
-            type: tunnel
-            ref_count: 8
-            valid: true
-            policy: disabled
-            sip: 172.222.45.2
-            dip: 192.168.0.204
-            vrf: default-domain:default-project:ip-fabric:__default__
-            mac: f0:1c:2d:43:ee:2d
-            tunnel_type: MPLSoGRE
-            nh_index: 17
-            vxlan_flag: false
-        label: 39
-        vxlan_id: 0
-        peer: 172.222.19.202
-        dest_vn: default-domain:admin:VN-L
-        unresolved: false
-        sg_list
-        supported_tunnel_type: MPLSoGRE
-        active_tunnel_type: MPLSoGRE
-        stale: false
-        path_preference_data
-          PathPreferenceSandeshData
-            sequence: 0
-            preference: 100
-            ecmp: false
-            wait_for_traffic: false
-        active_label: 39
-      PathSandeshData
-        nh
-          NhSandeshData
-            type: tunnel
-            ref_count: 8
-            valid: true
-            policy: disabled
-            sip: 172.222.45.2
-            dip: 192.168.0.204
-            vrf: default-domain:default-project:ip-fabric:__default__
-            mac: f0:1c:2d:43:ee:2d
-            tunnel_type: MPLSoGRE
-            nh_index: 17
-            vxlan_flag: false
-        label: 39
-        vxlan_id: 0
-        peer: 172.222.19.203
-        dest_vn: default-domain:admin:VN-L
-        unresolved: false
-        sg_list
-        supported_tunnel_type: MPLSoGRE
-        active_tunnel_type: MPLSoGRE
-        stale: false
-        path_preference_data
-          PathPreferenceSandeshData
-            sequence: 0
-            preference: 100
-            ecmp: false
-            wait_for_traffic: false
-        active_label: 39
-  ipam_subnet_route: false
-  proxy_arp: true
-  multicast: false
 
-root@comp45:~# ist vr route 3 200.200.200.10
-200.200.200.0/24
-    [172.222.19.202] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
-    [172.222.19.203] pref:100
-     to f0:1c:2d:43:ee:2d via MPLSoGRE dip:192.168.0.204 sip:172.222.45.2 label:39, nh_index:17 , nh_type:tunnel, nh_policy:disabled, active_label:39, vxlan_id:0
+  root@comp155:~# ist vr route -v 2 -p 10.85.190.131/32 -r
+  RouteUcSandeshData
+    src_ip: 10.85.190.131
+    src_plen: 32
+    src_vrf: default-domain:admin:public:public
+    path_list
+        PathSandeshData
+          nh
+            NhSandeshData
+              type: interface
+              ref_count: 12
+              valid: true
+              policy: enabled
+              itf: tap844fc340-2b
+              mac: 2:84:4f:c3:40:2b
+              mcast: disabled
+              nh_index: 20
+              vxlan_flag: false
+          label: 17
+          vxlan_id: 0
+          peer: 10.173.150.152
+          dest_vn_list
+              default-domain:admin:public
+          unresolved: false
+          sg_list
+              8000001
+          supported_tunnel_type: MPLSoGRE MPLSoUDP
+          active_tunnel_type: MPLSoUDP
+          stale: false
+          path_preference_data
+            PathPreferenceSandeshData
+              sequence: 0
+              preference: 200
+              ecmp: true
+          active_label: 17
+          ecmp_hashing_fields: l3-source-address,l3-destination-address,l4-protocol,l4-source-port,l4-destination-port,
+          communities
+        PathSandeshData
+          nh
+            NhSandeshData
+              type: interface
+              ref_count: 12
+              valid: true
+              policy: enabled
+              itf: tap844fc340-2b
+              mac: 2:84:4f:c3:40:2b
+              mcast: disabled
+              nh_index: 20
+              vxlan_flag: false
+          label: 17
+          vxlan_id: 0
+          peer: 10.173.150.153
+          dest_vn_list
+              default-domain:admin:public
+          unresolved: false
+          sg_list
+              8000001
+          supported_tunnel_type: MPLSoGRE MPLSoUDP
+          active_tunnel_type: MPLSoUDP
+          stale: false
+          path_preference_data
+            PathPreferenceSandeshData
+              sequence: 0
+              preference: 200
+              ecmp: true
+          active_label: 17
+          ecmp_hashing_fields: l3-source-address,l3-destination-address,l4-protocol,l4-source-port,l4-destination-port,
+          communities
+        PathSandeshData
+          nh
+            NhSandeshData
+              type: interface
+              ref_count: 12
+              valid: true
+              policy: enabled
+              itf: tap844fc340-2b
+              mac: 2:84:4f:c3:40:2b
+              mcast: disabled
+              nh_index: 20
+              vxlan_flag: false
+          label: 17
+          vxlan_id: 0
+          peer: LocalVmPort
+          dest_vn_list
+              default-domain:admin:public
+          unresolved: false
+          sg_list
+              8000001
+          supported_tunnel_type: MPLSoGRE MPLSoUDP
+          active_tunnel_type: MPLSoUDP
+          stale: false
+          path_preference_data
+            PathPreferenceSandeshData
+              sequence: 0
+              preference: 200
+              ecmp: true
+              wait_for_traffic: false
+              dependent_ip: default-domain:admin:vn1:vn1 : 1.2.3.3
+          active_label: 17
+          ecmp_hashing_fields: l3-source-address,l3-destination-address,l4-protocol,l4-source-port,l4-destination-port,
+          communities
+        PathSandeshData
+          nh
+            NhSandeshData
+              type
+              ref_count: 0
+              nh_index: 0
+          label: -1
+          vxlan_id: 0
+          peer: INET-EVPN
+          dest_vn_list
+          unresolved: false
+          gw_ip: 10.85.190.128
+          vrf
+          sg_list
+          supported_tunnel_type: MPLSoGRE MPLSoUDP VxLAN
+          active_tunnel_type: MPLSoUDP
+          stale: false
+          path_preference_data
+            PathPreferenceSandeshData
+              sequence: 0
+              preference: 100
+              ecmp: false
+              wait_for_traffic: true
+          active_label: -1
+          ecmp_hashing_fields: l3-source-address,l3-destination-address,l4-protocol,l4-source-port,l4-destination-port,
+          communities
+    ipam_subnet_route: false
+    proxy_arp: false
+    multicast: false
+
+root@comp155:~# ist vr route -v 2 10.85.190.131
+0.0.0.0/0
+    [10.173.150.152] pref:100
+     to f0:1c:2d:41:90:0 via MPLSoGRE dip:192.168.0.204 sip:10.173.150.155 label:27, nh_index:29 , nh_type:tunnel, nh_policy:disabled, active_label:27, vxlan_id:0
+    [10.173.150.153] pref:100
+     to f0:1c:2d:41:90:0 via MPLSoGRE dip:192.168.0.204 sip:10.173.150.155 label:27, nh_index:29 , nh_type:tunnel, nh_policy:disabled, active_label:27, vxlan_id:0
+10.85.190.128/29
+    [Local] pref:100
+     nh_index:1 , nh_type:discard, nh_policy:disabled, active_label:-1, vxlan_id:0
+10.85.190.131/32
+    [10.173.150.152] pref:200
+     to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:enabled, active_label:17, vxlan_id:0
+    [10.173.150.153] pref:200
+     to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:enabled, active_label:17, vxlan_id:0
+    [LocalVmPort] pref:200
+     to 2:84:4f:c3:40:2b via tap844fc340-2b, assigned_label:17, nh_index:20 , nh_type:interface, nh_policy:enabled, active_label:17, vxlan_id:0
+    [INET-EVPN] pref:100
+     nh_index:0 , nh_type:None, nh_policy:, active_label:-1, vxlan_id:0
 ```
 
 * Sandesh trace buffer
@@ -484,174 +595,4 @@ root@comp45:~# ist vr trace ControllerRxRouteXmppMessage | tail -n 33
 		</items>
 	</event>
 </message> $ controller/src/vnsw/agent/controller/controller_init.cc 844
-```
-
-### Control node commands
-
-* status
-```
-root@cont201:~# ist ctr status -d
-module_id: contrail-control
-state: Functional
-description
-Connetion Info:
-+-----------+-------------+-------------------------+--------+--------------------------------------+
-| type      | name        | server_addrs            | status | description                          |
-+-----------+-------------+-------------------------+--------+--------------------------------------+
-| IFMap     | IFMapServer | server_addrs            | Up     | Connection with IFMap Server (irond) |
-|           |             |     172.222.19.203:8443 |        |                                      |
-| Collector | n/a         | server_addrs            | Up     | Established                          |
-|           |             |     172.222.19.201:8086 |        |                                      |
-| Discovery | Collector   | server_addrs            | Up     | SubscribeResponse                    |
-|           |             |     172.222.19.200:5998 |        |                                      |
-| Discovery | IfmapServer | server_addrs            | Up     | SubscribeResponse                    |
-|           |             |     172.222.19.200:5998 |        |                                      |
-| Discovery | xmpp-server | server_addrs            | Up     | Publish Response - HeartBeat         |
-|           |             |     172.222.19.200:5998 |        |                                      |
-+-----------+-------------+-------------------------+--------+--------------------------------------+
-```
-
-* neighbor
-```
-root@cont201:~# ist ctr nei
-+----------+----------------+----------+----------+-----------+-------------+-----------------+------------+-----------------------------+
-| peer     | peer_address   | peer_asn | encoding | peer_type | state       | send_state      | flap_count | flap_time                   |
-+----------+----------------+----------+----------+-----------+-------------+-----------------+------------+-----------------------------+
-| cont202  | 172.222.19.202 | 13979    | BGP      | internal  | Established | in sync         | 0          | n/a                         |
-| cont203  | 172.222.19.203 | 13979    | BGP      | internal  | Established | in sync         | 0          | n/a                         |
-| sonics   | 192.168.0.200  | 13979    | BGP      | internal  | Established | in sync         | 0          | n/a                         |
-| seahawks | 192.168.0.201  | 13979    | BGP      | internal  | Established | in sync         | 5          | 2016-Jul-26 09:30:07.886512 |
-| camaro   | 192.168.0.204  | 13979    | BGP      | internal  | Active      | not advertising | 1          | 2016-Jul-28 12:06:24.868852 |
-| comp204  | 172.222.19.204 | 0        | XMPP     | internal  | Established | in sync         | 0          | n/a                         |
-| comp205  | 172.222.19.205 | 0        | XMPP     | internal  | Established | in sync         | 0          | n/a                         |
-+----------+----------------+----------+----------+-----------+-------------+-----------------+------------+-----------------------------+
-```
-
-* vrf
-```
-root@cont201:~# ist ctr vrf  default-domain:admin:VN-L:VN-L
-+--------------------------------+---------------------------+----------+----------+--------------------------+--------------------------+
-| name                           | virtual_network           | vn_index | vxlan_id | import_target            | export_target            |
-+--------------------------------+---------------------------+----------+----------+--------------------------+--------------------------+
-| default-domain:admin:VN-L:VN-L | default-domain:admin:VN-L | 5        | 0        | import_target            | export_target            |
-|                                |                           |          |          |     target:13979:33001   |     target:13979:33001   |
-|                                |                           |          |          |     target:13979:8000002 |     target:13979:8000002 |
-|                                |                           |          |          |     target:13979:8000004 |                          |
-+--------------------------------+---------------------------+----------+----------+--------------------------+--------------------------+
-```
-
-* route related
-```
-root@cont201:~# ist ctr routes inet.0
-+--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
-| name                                                         | prefixes | paths | primary_paths | secondary_paths | infeasible_paths |
-+--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
-| default-domain:ATEST:VNx:VNx.inet.0                          | 0        | 0     | 0             | 0               | 0                |
-| default-domain:admin:Dummy:Dummy.inet.0                      | 0        | 0     | 0             | 0               | 0                |
-| default-domain:admin:MGT:MGT.inet.0                          | 0        | 0     | 0             | 0               | 0                |
-| default-domain:admin:VN-L:VN-L.inet.0                        | 4        | 10    | 1             | 9               | 0                |
-| default-domain:admin:VN-L:service-cc571e38-0cc7-42cc-b0d2    | 4        | 10    | 2             | 8               | 0                |
-| -96dc3b77df2e-default-domain_admin_HairpinFW.inet.0          |          |       |               |                 |                  |
-| default-domain:admin:VN-R:VN-R.inet.0                        | 4        | 10    | 1             | 9               | 0                |
-| default-domain:admin:VN-R:service-cc571e38-0cc7-42cc-b0d2    | 4        | 10    | 2             | 8               | 0                |
-| -96dc3b77df2e-default-domain_admin_HairpinFW.inet.0          |          |       |               |                 |                  |
-| default-domain:default-                                      | 0        | 0     | 0             | 0               | 0                |
-| project:__link_local__:__link_local__.inet.0                 |          |       |               |                 |                  |
-| default-domain:default-project:default-virtual-network       | 0        | 0     | 0             | 0               | 0                |
-| :default-virtual-network.inet.0                              |          |       |               |                 |                  |
-| inet.0                                                       | 0        | 0     | 0             | 0               | 0                |
-| default-domain:demo:hhao-left-net:hhao-left-net.inet.0       | 0        | 0     | 0             | 0               | 0                |
-| default-domain:demo:hhao-left-v6net:hhao-left-v6net.inet.0   | 0        | 0     | 0             | 0               | 0                |
-| default-domain:demo:hhao-right-net:hhao-right-net.inet.0     | 0        | 0     | 0             | 0               | 0                |
-| default-domain:demo:hhao-right-v6net:hhao-right-v6net.inet.0 | 0        | 0     | 0             | 0               | 0                |
-| default-domain:demo:hhao-test-left:hhao-test-left.inet.0     | 0        | 0     | 0             | 0               | 0                |
-| default-domain:demo:mgt-net:mgt-net.inet.0                   | 0        | 0     | 0             | 0               | 0                |
-+--------------------------------------------------------------+----------+-------+---------------+-----------------+------------------+
-
-root@cont201:~# ist ctr route -h
-usage: ist ctr route [-h] [-P PREFIX]
-                     [-f {inet,inet6,evpn,ermvpn,rtarget,all}] [-l LAST] [-d]
-                     [-r] [-p {BGP,XMPP,local,ServiceChain,all}] [-v VRF]
-                     [-s SOURCE] [-t TABLE]
-                     [address]
-
-positional arguments:
-  address               Show routes for given address
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -P PREFIX, --prefix PREFIX
-                        Show routes exactally matching given prefix
-  -f {inet,inet6,evpn,ermvpn,rtarget,all}, --family {inet,inet6,evpn,ermvpn,rtarget,all}
-                        Show routes for given family. default:all
-  -l LAST, --last LAST  Show routes modified during last time period (e.g.
-                        10s, 5m, 2h, or 5d)
-  -d, --detail          Display detailed output
-  -r, --raw             Display raw output in plain text
-  -p {BGP,XMPP,local,ServiceChain,all}, --protocol {BGP,XMPP,local,ServiceChain,all}
-                        Show routes learned from given protocol
-  -v VRF, --vrf VRF     Show routes in given routing instance
-  -s SOURCE, --source SOURCE
-                        Show routes learned from given source
-  -t TABLE, --table TABLE
-                        Show routes in given table
-
-
-root@cont201:~# ist ctr route -t default-domain:admin:VN-L:VN-L.inet.0
-
-default-domain:admin:VN-L:VN-L.inet.0: 6 destinations, 12 routes (1 primary, 11 secondary, 0 infeasible)
-
-10.10.10.3/32, age: 1 day 12:40:44.546301, last_modified: 2016-Jul-21 02:53:34.144180
-    [XMPP|comp205] age: 1 day 12:40:44.553029, localpref: 200, nh: 172.222.19.205, encap: ['gre', 'udp', 'udp-contrail'], label: 17, AS path: None
-    [BGP|172.222.19.202] age: 1 day 12:28:15.575653, localpref: 200, nh: 172.222.19.205, encap: ['gre', 'udp', 'udp-contrail'], label: 17, AS path: None
-
-10.10.10.4/32, age: 1 day 11:55:01.077706, last_modified: 2016-Jul-21 03:39:17.612775
-    [BGP|172.222.19.202] age: 1 day 11:55:01.086113, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-    [BGP|172.222.19.203] age: 1 day 11:55:01.087040, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-
-20.20.20.3/32, age: 1 day 11:43:54.225656, last_modified: 2016-Jul-21 03:50:24.464825
-    [ServiceChain|None] age: 1 day 11:43:54.235801, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-    [BGP|172.222.19.202] age: 1 day 11:43:54.188976, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-    [BGP|172.222.19.203] age: 1 day 11:43:54.193993, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-
-20.20.20.4/32, age: 1 day 11:43:54.225236, last_modified: 2016-Jul-21 03:50:24.465245
-    [ServiceChain|None] age: 1 day 11:43:54.238205, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-    [BGP|172.222.19.202] age: 1 day 11:43:54.230359, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-    [BGP|172.222.19.203] age: 1 day 11:43:54.196554, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-
-33.100.100.1/32, age: 1 day 12:27:19.352008, last_modified: 2016-Jul-21 03:06:59.338473
-    [BGP|192.168.0.204] age: 1 day 12:27:19.367453, localpref: 100, nh: 192.168.0.204, encap: [], label: 39, AS path: None
-
-200.200.200.0/24, age: 0:23:30.329465, last_modified: 2016-Jul-22 15:10:48.361016
-    [BGP|192.168.0.204] age: 0:23:30.345893, localpref: 100, nh: 192.168.0.204, encap: [], label: 39, AS path: None
-
-root@cont201:~# ist ctr route -t default-domain:admin:VN-L:VN-L.inet.0 -P 10.10.10.4/32
-
-default-domain:admin:VN-L:VN-L.inet.0: 6 destinations, 12 routes (1 primary, 11 secondary, 0 infeasible)
-
-10.10.10.4/32, age: 1 day 12:01:50.982025, last_modified: 2016-Jul-21 03:39:17.612775
-    [BGP|172.222.19.202] age: 1 day 12:01:50.987927, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-    [BGP|172.222.19.203] age: 1 day 12:01:50.989104, localpref: 200, nh: 172.222.45.2, encap: ['gre', 'udp', 'udp-contrail'], label: 21, AS path: None
-
-```
-
-* List routes from SDN gateway (192.169.0.204) during last 1 hour
-
-```
-root@cont201:~# ist ctr route -t bgp.l3vpn.0 -s 192.168.0.204
-
-bgp.l3vpn.0: 18 destinations, 28 routes (20 primary, 8 secondary, 0 infeasible)
-
-13979:33001:33.100.100.1/32, age: 1 day 12:35:30.757845, last_modified: 2016-Jul-21 03:06:59.338383
-    [BGP|192.168.0.204] age: 1 day 12:35:30.764064, localpref: 100, nh: 192.168.0.204, encap: [], label: 39, AS path: None
-
-13979:33001:200.200.200.0/24, age: 0:31:41.735295, last_modified: 2016-Jul-22 15:10:48.360933
-    [BGP|192.168.0.204] age: 0:31:41.742705, localpref: 100, nh: 192.168.0.204, encap: [], label: 39, AS path: None
-
-root@cont201:~# ist ctr route -t bgp.l3vpn.0 -s 192.168.0.204 -l 1h
-
-bgp.l3vpn.0: 18 destinations, 28 routes (20 primary, 8 secondary, 0 infeasible)
-
-13979:33001:200.200.200.0/24, age: 0:31:45.741034, last_modified: 2016-Jul-22 15:10:48.360933
-    [BGP|192.168.0.204] age: 0:31:45.744422, localpref: 100, nh: 192.168.0.204, encap: [], label: 39, AS path: None
 ```
