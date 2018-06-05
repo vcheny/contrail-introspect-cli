@@ -578,7 +578,10 @@ class CLI_basic(object):
         host = host if host else '127.0.0.1'
         if port is None:
             cli_type = type(self).__name__[4:]
-            port = self.IntrospectPortMap[ServiceMap[cli_type]]
+            try:
+                port = self.IntrospectPortMap[ServiceMap[cli_type]]
+            except:
+                port = self.IntrospectPortMap[ServiceMap[cli_type] + ':0']
 
         self.IST = Introspect(host, port, filename)
 
