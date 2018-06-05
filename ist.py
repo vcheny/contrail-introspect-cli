@@ -575,7 +575,7 @@ class CLI_basic(object):
 
     def __init__(self, parser, host, port, filename):
 
-        host = host if host else '127.0.0.1'
+        host = host or '127.0.0.1'
         if port is None:
             cli_type = type(self).__name__[4:]
             try:
@@ -607,7 +607,7 @@ class CLI_basic(object):
         subp.set_defaults(func=self.SnhUve)
 
     def output_formatters(self, args, xpath, default_columns=[]):
-        max_width = args.max_width if args.max_width else Default_Max_Width
+        max_width = args.max_width or Default_Max_Width
         if args.format == 'text':
             self.IST.printText(xpath)
         elif args.columns:
@@ -1265,8 +1265,8 @@ class CLI_ctr(CLI_basic):
         if args.longer_match:
             longer_match = '1'
 
-        protocol = args.protocol if args.protocol else ''
-        family = args.family if args.family else ''
+        protocol = args.protocol or ''
+        family = args.family or ''
 
         path = ('Snh_ShowRouteReq?'
                 'routing_table=%s&routing_instance=%s&prefix=%s'
@@ -1525,7 +1525,7 @@ class CLI_vr(CLI_basic):
         self.output_formatters(args, xpath)
 
     def SnhVxLanConfig(self, args):
-        id = str(args.id) if args.id else ''
+        id = str(args.id) or ''
         path = ('Snh_VxLanConfigReq?vxlan_id=%s&vn=%s&active=%s' %
                 (id, args.vn, args.active))
         xpath = '//VxLanConfigEntry'
@@ -1533,7 +1533,7 @@ class CLI_vr(CLI_basic):
         self.output_formatters(args, xpath)
 
     def SnhVxLan(self, args):
-        id = str(args.id) if args.id else ''
+        id = str(args.id) or ''
         path = 'Snh_VxLanReq?vxlan_id=%s' % (id)
         xpath = '//VxLanSandeshData'
         self.IST.get(path)
@@ -1546,31 +1546,31 @@ class CLI_vr(CLI_basic):
         self.output_formatters(args, xpath)
 
     def SnhVrfAssign(self, args):
-        uuid = args.uuid if args.uuid else ''
+        uuid = args.uuid or ''
         path = 'Snh_VrfAssignReq?uuid=%s' % (uuid)
         xpath = '//vrf_assign_list'
         self.IST.get(path)
         self.output_formatters(args, xpath)
 
     def SnhMpls(self, args):
-        type = args.type if args.type else ''
-        label = str(args.label) if args.label else ''
+        type = args.type or ''
+        label = str(args.label) or ''
         path = 'Snh_MplsReq?type=%s&label=%s' % (type, label)
         xpath = '//MplsSandeshData'
         self.IST.get(path)
         self.output_formatters(args, xpath)
 
     def SnhVmList (self, args):
-        uuid = args.uuid if args.uuid else ''
+        uuid = args.uuid or ''
         path = 'Snh_VmListReq?uuid=%s' % (uuid)
         xpath = '//VmSandeshData'
         self.IST.get(path)
         self.output_formatters(args, xpath)
 
     def SnhNhList(self, args):
-        index = str(args.index) if args.index else ''
-        type = args.type if args.type else ''
-        policy = args.policy if args.policy else ''
+        index = str(args.index) or ''
+        type = args.type or ''
+        policy = args.policy or ''
         path = ('Snh_NhListReq?type=%s&nh_index=%s&policy_enabled=%s' %
                 (type, index, policy))
         xpath = '//NhSandeshData'
@@ -1581,7 +1581,7 @@ class CLI_vr(CLI_basic):
         self.output_formatters(args, xpath, default_columns)
 
     def SnhServiceInstance(self, args):
-        uuid = args.uuid if args.uuid else ''
+        uuid = args.uuid or ''
         path = 'Snh_ServiceInstanceReq?uuid=%s' % (uuid)
         xpath = '//ServiceInstanceSandeshData'
         default_columns = ['uuid', 'service_type', 'virtualization_type',
