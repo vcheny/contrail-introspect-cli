@@ -631,7 +631,7 @@ class CLI_basic(object):
         self.IST.printText("//CpuLoadInfo/*")
 
     def SnhTrace(self, args):
-        if args.name:
+        if not args.name:
             self.IST.get('Snh_SandeshTraceBufferListRequest')
             self.IST.printText('//trace_buf_name')
             #self.IST.printText('//*[not(*)]')
