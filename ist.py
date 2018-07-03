@@ -607,13 +607,14 @@ class CLI_basic(object):
         subp.set_defaults(func=self.SnhUve)
 
     def output_formatters(self, args, xpath, default_columns=[]):
-        max_width = args.max_width or Default_Max_Width
         if args.format == 'text':
             self.IST.printText(xpath)
-        elif args.columns:
-            self.IST.printTbl(xpath, max_width, *args.columns)
         else:
-            self.IST.printTbl(xpath, max_width, *default_columns)
+            max_width = args.max_width or Default_Max_Width
+            if args.columns:
+                self.IST.printTbl(xpath, max_width, *args.columns)
+            else:
+                self.IST.printTbl(xpath, max_width, *default_columns)
 
     def SnhNodeStatus(self, args):
         self.IST.get('Snh_SandeshUVECacheReq?tname=NodeStatus')
