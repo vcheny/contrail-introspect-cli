@@ -13,7 +13,8 @@ version = '1.1'
 import sys, os
 import argparse
 import socket, struct
-from urllib2 import urlopen, URLError, HTTPError
+import requests
+from urllib import urlencode
 from datetime import datetime
 from lxml import etree
 from prettytable import PrettyTable
@@ -21,6 +22,8 @@ from uuid import UUID
 
 debug = False
 Default_Max_Width = 36
+proxy = None
+token = None
 
 ServiceMap = {
     "vr": "contrail-vrouter-agent",
@@ -64,21 +67,27 @@ class Introspect:
         else:
             while True:
                 url = self.host_url + path.replace(' ', '%20')
+                headers = {}
+                if proxy and token:
+                    url = proxy + "/forward-proxy?" + urlencode({'proxyURL': url})
+                    headers['X-Auth-Token'] = token
                 if debug: print "DEBUG: retrieving url " + url
                 try:
-                  response = urlopen(url)
-                except HTTPError as e:
+                    response = requests.get(url,headers=headers)
+                    response.raise_for_status()
+                except requests.exceptions.HTTPError:
                     print 'The server couldn\'t fulfill the request.'
                     print 'URL: ' + url
-                    print 'Error code: ', e.code
+                    print 'Error code: ', response.status_code
+                    print 'Error text: ', response.text
                     sys.exit(1)
-                except URLError as e:
+                except requests.exceptions.RequestException as e:
                     print 'Failed to reach destination'
                     print 'URL: ' + url
-                    print 'Reason: ', e.reason
+                    print 'Reason: ', e
                     sys.exit(1)
                 else:
-                    ISOutput = response.read()
+                    ISOutput = response.text
                     response.close()
 
                 self.output_etree.append(etree.fromstring(ISOutput))
@@ -730,7 +739,7 @@ class CLI_cfg_schema(CLI_basic):
         self.output_formatters(args, xpath)
 
     def SnhRoutingInstanceList(self, args):
-        path = ('Snh_RoutintInstanceList?vn_name=%s&ri_name=%s' %
+        path = ('Snh_RoutingInstanceList?vn_name=%s&ri_name=%s' %
                 (args.vn, args.name))
         xpath = '//RoutingInstance'
         self.IST.get(path)
@@ -1906,6 +1915,10 @@ def main():
 
     host = os.environ.get('INTROSPECT_HOST', None)
     port = os.environ.get('INTROSPECT_PORT', None)
+    global proxy
+    global token
+    proxy = os.environ.get('INTROSPECT_PROXY', None)
+    token = os.environ.get('INTROSPECT_TOKEN', None)
     filename = None
 
     try:
@@ -1915,6 +1928,16 @@ def main():
 
     try:
         port = argv[argv.index('--port') + 1]
+    except ValueError:
+        pass
+
+    try:
+        proxy = argv[argv.index('--proxy') + 1]
+    except ValueError:
+        pass
+
+    try:
+        token = argv[argv.index('--token') + 1]
     except ValueError:
         pass
 
@@ -1945,6 +1968,8 @@ def main():
     parser.add_argument('--host', type=str,
                         help="Introspect host address. Default: localhost")
     parser.add_argument('--port', type=int, help="Introspect port number")
+    parser.add_argument('--proxy', type=str, help="Introspect proxy URL")
+    parser.add_argument('--token', type=str, help="Token for introspect proxy requests")
 
     roleparsers = parser.add_subparsers()
 
