@@ -8,6 +8,7 @@ Note: Entire scripts is kept in one single file intentionally for easy use.
 ## Dependencies
 * lxml
 * prettytable
+* requests
 
 ## Usage
 
@@ -16,6 +17,7 @@ Use ```-h``` to list possible command options
 ```
 root@comp45:~# ist -h
 usage: ist [-h] [--version] [--debug] [--host HOST] [--port PORT]
+           [--proxy PROXY] [--token TOKEN]
            {alarm_gen,analytics,cfg_api,cfg_disc,cfg_schema,cfg_svcmon,collector,ctr,dm,dns,nodemgr_analytics,nodemgr_cfg,nodemgr_ctr,nodemgr_db,nodemgr_vr,qe,vr}
            ...
 
@@ -47,6 +49,8 @@ optional arguments:
   --debug               Verbose mode
   --host HOST           Introspect host address. Default: localhost
   --port PORT           Introspect port number
+  --proxy PROXY         Introspect proxy URL
+  --token TOKEN         Token for introspect proxy requests
 
 root@comp45:~# ist vr -h
 usage: ist vr [-h]
@@ -143,6 +147,25 @@ description
 | Discovery | IfmapServer |   172.18.101.100:5998 | Up     | SubscribeResponse                    |
 | Discovery | xmpp-server |   172.18.101.100:5998 | Up     | Publish Response - HeartBeat         |
 +-----------+-------------+-----------------------+--------+--------------------------------------+
+```
+* from remote using [introspect proxy](https://github.com/Juniper/contrail-web-controller/blob/master/specs/introspect_proxy_without_login.md)
+```
+[cacdtl01ps3910:~]$ source openrc
+[cacdtl01ps3910:~]$ export token=$(openstack token issue -f value -c id)
+[cacdtl01ps3910:~]$ ist --proxy https://contrail-webui:8143 --host 172.29.24.88 ctr status
+Introspect Host: 172.29.24.88
+module_id: contrail-control
+state: Functional
+description
++-----------+-------------+----------------------+--------+--------------------------------------+
+| type      | name        | server_addrs         | status | description                          |
++-----------+-------------+----------------------+--------+--------------------------------------+
+| IFMap     | IFMapServer |   172.29.24.100:8443 | Up     | Connection with IFMap Server (irond) |
+| Collector | n/a         |   172.29.24.82:8086  | Up     | Established                          |
+| Discovery | Collector   |   172.29.24.77:5998  | Up     | SubscribeResponse                    |
+| Discovery | IfmapServer |   172.29.24.77:5998  | Up     | SubscribeResponse                    |
+| Discovery | xmpp-server |   172.29.24.77:5998  | Up     | Publish Response - HeartBeat         |
++-----------+-------------+----------------------+--------+--------------------------------------+
 ```
 
 ### vRouter commands
