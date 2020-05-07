@@ -1534,8 +1534,13 @@ class CLI_vr(CLI_basic):
         self.output_formatters(args, xpath)
 
     def SnhVxLan(self, args):
-        id = str(args.id) or ''
-        path = 'Snh_VxLanReq?vxlan_id=%s' % (id)
+        if (args.id):
+            id = str(args.id) or ''
+        else:
+            id = None
+        path = 'Snh_VxLanReq'
+        if (id):
+            path += '?vxlan_id=%s' % (id)
         xpath = '//VxLanSandeshData'
         self.IST.get(path)
         self.output_formatters(args, xpath)
@@ -1555,8 +1560,13 @@ class CLI_vr(CLI_basic):
 
     def SnhMpls(self, args):
         type = args.type or ''
-        label = str(args.label) or ''
-        path = 'Snh_MplsReq?type=%s&label=%s' % (type, label)
+        if (args.label):
+          label = str(args.label) or ''
+        else:
+          label = None
+        path = 'Snh_MplsReq?type=%s' % (type)
+        if (label):
+          path += '&label=%s' % (label)
         xpath = '//MplsSandeshData'
         self.IST.get(path)
         self.output_formatters(args, xpath)
@@ -1569,11 +1579,16 @@ class CLI_vr(CLI_basic):
         self.output_formatters(args, xpath)
 
     def SnhNhList(self, args):
-        index = str(args.index) or ''
+        if (args.index):
+            index = str(args.index) or ''
+        else:
+            index = None
         type = args.type or ''
         policy = args.policy or ''
-        path = ('Snh_NhListReq?type=%s&nh_index=%s&policy_enabled=%s' %
-                (type, index, policy))
+        path = 'Snh_NhListReq?type=%s' % (type)
+        if (index):
+            path += '&nh_index=%s' % (index) ## always need to be 2nd
+        path += '&policy_enabled=%s' % (policy)
         xpath = '//NhSandeshData'
         default_columns = ['type', 'nh_index', 'policy', 'itf', 'mac', 'vrf',
                            'valid', 'ref_count', 'mc_list']
