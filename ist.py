@@ -1321,6 +1321,19 @@ class CLI_vr(CLI_basic):
         subp.add_argument('-i', '--ipv4', default='', help='VM IP address')
         subp.set_defaults(func=self.SnhItf)
 
+        ## show kinterfaces
+        subp = self.subparser.add_parser('kintf',
+                                         parents = [self.common_parser],
+                                         help='Show vRouter interfaces')
+        subp.add_argument('search', nargs='?', default='',
+                          help='Search string')
+        subp.add_argument('-u', '--uuid', default='', help='Interface uuid')
+        subp.add_argument('-v', '--vn', default='', help='Virutal network')
+        subp.add_argument('-n', '--name', default='', help='Interface name')
+        subp.add_argument('-m', '--mac', default='', help='VM mac address')
+        subp.add_argument('-i', '--ipv4', default='', help='VM IP address')
+        subp.set_defaults(func=self.SnhKInterfaceReq)
+
         ## show vn
         subp = self.subparser.add_parser('vn',
                                          parents = [self.common_parser],
@@ -1625,6 +1638,18 @@ class CLI_vr(CLI_basic):
 
         default_columns = ["index", "name", "active", "mac_addr", "ip_addr",
                            "mdata_ip_addr", "vm_name", "vn_name"]
+
+        self.output_formatters(args, xpath, default_columns)
+
+    def SnhKInterfaceReq(self, args):
+        path = 'Snh_KInterfaceReq'
+        self.IST.get(path)
+
+        xpath = "//KInterfaceInfo"
+        if args.search: xpath += "[contains(., '%s')]" % args.search
+
+        default_columns = ["idx", "type", "flag", "vrf", "rid",
+                           "os_idx", "mtu", "name"]
 
         self.output_formatters(args, xpath, default_columns)
 
@@ -1973,18 +1998,14 @@ def main():
         debug = True
 
     parser = argparse.ArgumentParser(prog='ist',
-                                     description='A script to make Contrail '
-                                                 'Introspect output CLI '
-                                                 'friendly.')
-    parser.add_argument('--version', action="store_true",
-                        help="Script version")
-    parser.add_argument('--debug', action="store_true",
-                        help="Verbose mode")
-    parser.add_argument('--host', type=str,
-                        help="Introspect host address. Default: localhost")
-    parser.add_argument('--port', type=int, help="Introspect port number")
-    parser.add_argument('--proxy', type=str, help="Introspect proxy URL")
-    parser.add_argument('--token', type=str, help="Token for introspect proxy requests")
+        description='A script to make Contrail Introspect output CLI friendly.')
+    parser.add_argument('--version',  action="store_true",  help="Script version")
+    parser.add_argument('--debug',    action="store_true",  help="Verbose mode")
+    parser.add_argument('--host',     type=str,             help="Introspect host address. Default: localhost")
+    parser.add_argument('--port',     type=int,             help="Introspect port number")
+    parser.add_argument('--proxy',    type=str,             help="Introspect proxy URL")
+    parser.add_argument('--token',    type=str,             help="Token for introspect proxy requests")
+    parser.add_argument('--file',     type=str,             help="Introspect file")
 
     roleparsers = parser.add_subparsers()
 
