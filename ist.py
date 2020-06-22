@@ -73,7 +73,11 @@ class Introspect:
                     headers['X-Auth-Token'] = token
                 if debug: print "DEBUG: retrieving url " + url
                 try:
-                    response = requests.get(url,headers=headers)
+                    #response = requests.get(url,headers=headers)
+                    requests.get(url,headers=headers,
+                            verify='/etc/contrail/ssl/certs/ca-cert.pem', 
+                            cert=('/etc/contrail/ssl/certs/server.pem', '/etc/contrail/ssl/private/server-privkey.pem')
+                            )
                     response.raise_for_status()
                 except requests.exceptions.HTTPError:
                     print 'The server couldn\'t fulfill the request.'
