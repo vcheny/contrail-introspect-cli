@@ -48,7 +48,7 @@ ServiceMap = {
 class Introspect:
     def __init__ (self, host, port, filename):
 
-        self.host_url = "http://" + host + ":" + str(port) + "/"
+        self.host_url = "https://" + host + ":" + str(port) + "/"
         self.filename = filename
 
     def get (self, path):
