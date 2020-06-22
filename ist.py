@@ -2006,6 +2006,8 @@ def main():
     parser.add_argument('--proxy',    type=str,             help="Introspect proxy URL")
     parser.add_argument('--token',    type=str,             help="Token for introspect proxy requests")
     parser.add_argument('--file',     type=str,             help="Introspect file")
+    parser.add_argument('--key_file', type=str,             help="SSL key file")
+    parser.add_argument('--ca_file',  type=str,             help="SSL ca file")
 
     roleparsers = parser.add_subparsers()
 

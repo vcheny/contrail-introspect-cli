@@ -1,0 +1,7 @@
+<?xml-stylesheet type="text/xsl" href="/universal_parse.xsl"?>
+<sandesh_ctrl type="rlist">
+<SandeshCtrlClientToServer type="sandesh">
+<source type="string">0</source><module_name type="string">0</module_name><sucessful_connections type="u32">0</sucessful_connections><pid type="u32">0</pid><http_port type="u32">0</http_port><node_type_name type="string">0</node_type_name><instance_id_name type="string">0</instance_id_name></SandeshCtrlClientToServer>
+<SandeshCtrlServerToClient type="sandesh">
+<success type="bool">0</success></SandeshCtrlServerToClient>
+</sandesh_ctrl>

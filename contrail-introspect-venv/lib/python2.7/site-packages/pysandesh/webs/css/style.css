@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2013 Juniper Networks, Inc. All rights reserved.
+ */
+ 
+pre {
+    white-space: pre;
+    min-width: 150px;
+    padding: 3px;
+    margin: 0 0 3px;
+}
+
+#page-content {
+    margin-top:50px;
+}
+
+.first-cap {
+    text-transform:capitalize;
+}
+
+.table th {
+    padding-right: 20px;
+}
+
+.sidenav {
+  width: 228px;
+  padding: 0px;
+  background-color: #fff;
+  -webkit-border-radius: 6px;
+     -moz-border-radius: 6px;
+          border-radius: 6px;
+  -webkit-box-shadow: 0 1px 4px rgba(0,0,0,.065);
+     -moz-box-shadow: 0 1px 4px rgba(0,0,0,.065);
+          box-shadow: 0 1px 4px rgba(0,0,0,.065);
+}
+
+.sidenav > li > a {
+  display: block;
+  width: 190px \9;
+  margin: 0 0 -1px;
+  padding: 8px 14px;
+  border: 1px solid #e5e5e5;
+}
+
+.sidenav > li:first-child > a {
+  -webkit-border-radius: 6px 6px 0 0;
+     -moz-border-radius: 6px 6px 0 0;
+          border-radius: 6px 6px 0 0;
+}
+
+.sidenav > li:last-child > a {
+  -webkit-border-radius: 0 0 6px 6px;
+     -moz-border-radius: 0 0 6px 6px;
+          border-radius: 0 0 6px 6px;
+}
+
+.sidenav > .active > a {
+  position: relative;
+  z-index: 2;
+  padding: 9px 15px;
+  border: 0;
+  text-shadow: 0 1px 0 rgba(0,0,0,.15);
+  -webkit-box-shadow: inset 1px 0 0 rgba(0,0,0,.1), inset -1px 0 0 rgba(0,0,0,.1);
+     -moz-box-shadow: inset 1px 0 0 rgba(0,0,0,.1), inset -1px 0 0 rgba(0,0,0,.1);
+          box-shadow: inset 1px 0 0 rgba(0,0,0,.1), inset -1px 0 0 rgba(0,0,0,.1);
+}
+
+.sidenav .icon-chevron-right {
+  float: right;
+  margin-top: 2px;
+  margin-right: -6px;
+  opacity: .25;
+}
+
+.sidenav > li > a:hover {
+  background-color: #f5f5f5;
+}
+
+.sidenav a:hover .icon-chevron-right {
+  opacity: .5;
+}
+
+.sidenav .active .icon-chevron-right,
+.sidenav .active a:hover .icon-chevron-right {
+  opacity: 1;
+}
+.sidenav.affix {
+  top: 40px;
+}
+
+.sidenav.affix-bottom {
+  position: absolute;
+  top: auto;
+  bottom: 270px;
+}
+
+.dt-margin-10 {
+  margin-left: 10px;
+}
+
+.table {
+    width: auto;
+}
+
+.container-fluid {
+	padding-right: 10px;
+	padding-left: 10px;
+}
+pre{
+	font-size: 12px;
+	border-width: 0;
+	min-width: 125px;
+}
+h4{
+	font-size: 14px;
+	margin: 5px;
+}
+th, td{
+	font-size: 13px;
+	padding: 2px !important;
+	margin: 2px !important;
+	border-color: #eee !important;
+}
+.accordion-heading .accordion-toggle {
+	display: block;
+	padding: 2px;
+}
+.accordion-inner {
+	padding: 2px;
+	border-top: 0;
+}
+table{
+	border-color: #eee !important;
+}

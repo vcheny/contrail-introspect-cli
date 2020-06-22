@@ -1,0 +1,12 @@
+setup.py
+sandesh_common/__init__.py
+sandesh_common.egg-info/PKG-INFO
+sandesh_common.egg-info/SOURCES.txt
+sandesh_common.egg-info/dependency_links.txt
+sandesh_common.egg-info/top_level.txt
+sandesh_common/vns/__init__.py
+sandesh_common/vns/constants.py
+sandesh_common/vns/http_request.py
+sandesh_common/vns/request_skeleton.py
+sandesh_common/vns/ttypes.py
+sandesh_common/vns/vns.xml
