@@ -1,9 +1,0 @@
-<?xml-stylesheet type="text/xsl" href="/universal_parse.xsl"?>
-<sandesh_alarm type="rlist">
-<SandeshAlarmCacheRequest type="sandesh">
-<table type="string">0</table><name type="string">0</name></SandeshAlarmCacheRequest>
-<SandeshAlarmTypesRequest type="sandesh">
-</SandeshAlarmTypesRequest>
-<SandeshAlarmAckRequest type="sandesh">
-<table type="string">0</table><name type="string">0</name><type type="string">0</type><timestamp type="u64">0</timestamp></SandeshAlarmAckRequest>
-</sandesh_alarm>
