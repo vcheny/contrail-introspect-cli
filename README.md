@@ -1,11 +1,11 @@
 # contrail-introspect-cli
 
 ## SSL Support
-This is a very slightly modified fork of https://github.com/vcheny/contrail-introspect-cli
+This is a very slightly modified fork of https://github.com/vcheny/contrail-introspect-cli  
 The modifications are to add support for SSL enabled introspect endpoints.
 When SSL is enabled we need to use SSL/TLS Client Authentication.  The modifications allow passing of client side cert/key pair and a CA.
 ```set_ssl_envs``` contains example environment variable settings.
-Alternatively use ```--key_file, --ca_file & --cert_file``` to pass as CLI arguments.
+Alternatively use ```--key_file, --ca_file & --cert_file``` to pass as CLI arguments.  
 see ```ist.py --help``` for more details.
 
 The rest of the README is verbatim from https://github.com/vcheny/contrail-introspect-cli
