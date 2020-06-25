@@ -47,11 +47,9 @@ ServiceMap = {
 
 class Introspect:
     def __init__ (self, host, port, filename, ssl_vars):
-        if ssl_vars:
+        if "cert_file" in ssl_vars:
             self.host_url = "https://" + host + ":" + str(port) + "/"
-            self.ca_file = ssl_vars['ca_file']
-            self.cert_file = ssl_vars['cert_file']
-            self.key_file = ssl_vars['key_file']
+            self.ssl_vars = ssl_vars
             self.has_ssl = True
         else:
             self.host_url = "http://" + host + ":" + str(port) + "/"
@@ -82,8 +80,8 @@ class Introspect:
                 try:
                     if self.has_ssl:
                         response = requests.get(url,headers=headers,
-                                                verify=self.ca_file, 
-                                                cert=(self.cert_file, self.key_file)
+                                                verify=self.ssl_vars["ca_file"], 
+                                                cert=(self.ssl_vars["cert_file"], self.ssl_vars["key_file"])
                                                 )
                     else:
                         response = requests.get(url,headers=headers)
@@ -2014,16 +2012,16 @@ def main():
     try:
         ssl_vars['key_file'] = argv[argv.index('--key_file') + 1]
     except ValueError:
-        pass
+        ssl_vars['key_file'] = os.environ.get('SSL_KEY_FILE', None)
     try:
         ssl_vars['ca_file'] = argv[argv.index('--ca_file') + 1]
     except ValueError:
-        pass
+        ssl_vars['ca_file'] = os.environ.get('SSL_CA_FILE', None)
     try:
         ssl_vars['cert_file'] = argv[argv.index('--cert_file') + 1]
     except ValueError:
-        pass
-
+        ssl_vars['cert_file'] = os.environ.get('SSL_CERT_FILE', None)
+    print(ssl_vars)
     parser = argparse.ArgumentParser(prog='ist',
         description='A script to make Contrail Introspect output CLI friendly.')
     parser.add_argument('--version',   action="store_true",  help="Script version")
@@ -2033,9 +2031,9 @@ def main():
     parser.add_argument('--proxy',     type=str,             help="Introspect proxy URL")
     parser.add_argument('--token',     type=str,             help="Token for introspect proxy requests")
     parser.add_argument('--file',      type=str,             help="Introspect file")
-    parser.add_argument('--key_file',  type=str,             help="SSL key file")
-    parser.add_argument('--ca_file',   type=str,             help="SSL ca file")
-    parser.add_argument('--cert_file', type=str,             help="SSL cert file")
+    parser.add_argument('--key_file',  type=str,             help="SSL key file, alternatively set SSL_KEY_FILE env var")
+    parser.add_argument('--ca_file',   type=str,             help="SSL ca file, alternatively set SSL_CA_FILE env var")
+    parser.add_argument('--cert_file', type=str,             help="SSL cert file, alternatively set SSL_CERT_FILE env var")
 
     roleparsers = parser.add_subparsers()
 
