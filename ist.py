@@ -47,7 +47,7 @@ ServiceMap = {
 
 class Introspect:
     def __init__ (self, host, port, filename, ssl_vars):
-        if "cert_file" in ssl_vars:
+        if ssl_vars["cert_file"]:
             self.host_url = "https://" + host + ":" + str(port) + "/"
             self.ssl_vars = ssl_vars
             self.has_ssl = True
