@@ -2021,7 +2021,6 @@ def main():
         ssl_vars['cert_file'] = argv[argv.index('--cert_file') + 1]
     except ValueError:
         ssl_vars['cert_file'] = os.environ.get('SSL_CERT_FILE', None)
-    print(ssl_vars)
     parser = argparse.ArgumentParser(prog='ist',
         description='A script to make Contrail Introspect output CLI friendly.')
     parser.add_argument('--version',   action="store_true",  help="Script version")
