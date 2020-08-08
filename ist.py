@@ -14,7 +14,10 @@ import sys, os
 import argparse
 import socket, struct
 import requests
-from urllib import urlencode
+try:
+    from urllib.parse import urlencode # python3
+except:
+    from urllib import urlencode # python2
 from datetime import datetime
 from lxml import etree
 from prettytable import PrettyTable
@@ -58,11 +61,11 @@ class Introspect:
         # load xml output from given file
         if self.filename:
             try:
-                print "Loadding from introspect xml %s" % self.filename
+                print("Loadding from introspect xml %s" % self.filename)
                 self.output_etree.append(etree.parse(self.filename))
             except Exception as inst:
-                print "ERROR: parsing %s failed " % self.filename
-                print inst
+                print("ERROR: parsing %s failed " % self.filename)
+                print(inst)
                 sys.exit(1)
         else:
             while True:
@@ -71,20 +74,20 @@ class Introspect:
                 if proxy and token:
                     url = proxy + "/forward-proxy?" + urlencode({'proxyURL': url})
                     headers['X-Auth-Token'] = token
-                if debug: print "DEBUG: retrieving url " + url
+                if debug: print("DEBUG: retrieving url " + url)
                 try:
                     response = requests.get(url,headers=headers)
                     response.raise_for_status()
                 except requests.exceptions.HTTPError:
-                    print 'The server couldn\'t fulfill the request.'
-                    print 'URL: ' + url
-                    print 'Error code: ', response.status_code
-                    print 'Error text: ', response.text
+                    print('The server couldn\'t fulfill the request.')
+                    print('URL: ' + url)
+                    print('Error code: ', response.status_code)
+                    print('Error text: ', response.text)
                     sys.exit(1)
                 except requests.exceptions.RequestException as e:
-                    print 'Failed to reach destination'
-                    print 'URL: ' + url
-                    print 'Reason: ', e
+                    print('Failed to reach destination')
+                    print('URL: ' + url)
+                    print('Reason: ', e)
                     sys.exit(1)
                 else:
                     ISOutput = response.text
@@ -106,7 +109,7 @@ class Introspect:
                             self.output_etree = []
                             continue
                         else:
-                            print "Warning: all page in pagination is empty!"
+                            print("Warning: all page in pagination is empty!")
                             break
                     else:
                         break
@@ -121,7 +124,7 @@ class Introspect:
                             '?x=' + next_batch[0].text
                 else:
                     break
-                if debug: print "instrosepct get completes\n"
+                if debug: print("instrosepct get completes\n")
         if debug:
             for tree in self.output_etree:
                 etree.dump(tree)
@@ -139,7 +142,7 @@ class Introspect:
         """ print introspect output in human readable text """
         for tree in self.output_etree:
             for element in tree.xpath(xpathExpr):
-                print Introspect.elementToStr('', element).rstrip()
+                print(Introspect.elementToStr('', element).rstrip())
 
     @staticmethod
     def dumpTbl(items, max_width, columns):
@@ -170,7 +173,7 @@ class Introspect:
                 else:
                     row.append("-")
             tbl.add_row(row)
-        print tbl
+        print(tbl)
 
     @staticmethod
     def elementToStr(indent, etreenode):
@@ -284,15 +287,15 @@ class Introspect:
 
                 if family == 'inet' and addr_type == ADDR_INET4:
                     if not addressInNetwork(address, prefix):
-                        if debug: print "DEBUG: skipping " + prefix
+                        if debug: print("DEBUG: skipping " + prefix)
                         continue
                 elif family == 'inet6' and addr_type == ADDR_INET6:
                     if not addressInNetwork6(address, prefix):
-                        if debug: print "DEBUG: skipping " + prefix
+                        if debug: print("DEBUG: skipping " + prefix)
                         continue
 
                 if mode == "raw":
-                    print Introspect.elementToStr('', route).rstrip()
+                    print(Introspect.elementToStr('', route).rstrip())
                     continue
 
                 output = prefix + "\n"
@@ -371,7 +374,7 @@ class Introspect:
                             str(path.xpath("communities/list/element/text()"))
                     output += path_info + "\n"
 
-                print output.rstrip()
+                print(output.rstrip())
 
     def showRoute_CTR(self, last, mode):
         """ show route output from control node intropsect """
@@ -391,11 +394,11 @@ class Introspect:
                 ifs_path_count = table.find('infeasible_paths').text
 
                 if not(tbl_name in printedTbl):
-                    print  ("\n%s: %s destinations, %s routes "
+                    print(("\n%s: %s destinations, %s routes "
                             "(%s primary, %s secondary, %s infeasible)"
                             % (tbl_name, prefix_count, tot_path_count,
                                pri_path_count, sec_path_count,
-                               ifs_path_count))
+                               ifs_path_count)))
                     printedTbl[tbl_name] = True
 
 
@@ -417,14 +420,14 @@ class Introspect:
                                                    '%Y-%b-%d %H:%M:%S.%f')
                             path_age = str(now - t1).replace(',', '')
                             if not ((now - t1).total_seconds() > last) :
-                                print ("\n%s, age: %s, last_modified: %s" %
-                                        (prefix, prefix_age, prefix_modified))
-                                print Introspect.pathToStr(indent, path, mode)
+                                print(("\n%s, age: %s, last_modified: %s" %
+                                        (prefix, prefix_age, prefix_modified)))
+                                print(Introspect.pathToStr(indent, path, mode))
                     else:
-                        print ("\n%s, age: %s, last_modified: %s" %
-                                (prefix, prefix_age, prefix_modified))
+                        print(("\n%s, age: %s, last_modified: %s" %
+                                (prefix, prefix_age, prefix_modified)))
                         for path in paths:
-                            print Introspect.pathToStr(indent, path, mode)
+                            print(Introspect.pathToStr(indent, path, mode))
 
     def showSCRoute(self, xpathExpr):
 
@@ -483,7 +486,7 @@ class Introspect:
 
                 tbl.add_row(row)
 
-        print tbl
+        print(tbl)
 
     def showSCRouteDetail(self, xpathExpr):
 
@@ -497,17 +500,17 @@ class Introspect:
             for sc in tree.xpath(xpathExpr):
 
                 for field in fields:
-                    print "%s: %s" % (field, sc.find(field).text)
+                    print("%s: %s" % (field, sc.find(field).text))
 
-                print "connectedRouteInfo:"
+                print("connectedRouteInfo:")
                 sc_xpath = ('./connected_route/ConnectedRouteInfo'
                             '/service_chain_addr')
-                print ("%sservice_chain_addr: %s" %
-                       (indent, sc.xpath(sc_xpath)[0].text))
+                print(("%sservice_chain_addr: %s" %
+                       (indent, sc.xpath(sc_xpath)[0].text)))
                 for route in sc.xpath('./connected_route//ShowRoute'):
-                    print Introspect.routeToStr(indent, route, 'detail')
+                    print(Introspect.routeToStr(indent, route, 'detail'))
 
-                print "more_specifics:"
+                print("more_specifics:")
                 specifics = ''
                 spec_xpath = './more_specifics/list/PrefixToRouteListInfo'
                 PrefixToRouteListInfo = sc.xpath(spec_xpath)
@@ -515,15 +518,15 @@ class Introspect:
                     specifics += ("%sprefix: %s, aggregate: %s\n" %
                                   (indent, p.find('prefix').text,
                                    p.find('aggregate').text))
-                print specifics.rstrip()
+                print(specifics.rstrip())
 
-                print "ext_connecting_rt_info_list:"
+                print("ext_connecting_rt_info_list:")
                 ext_xpath = './/ExtConnectRouteInfo/ext_rt_svc_rt/ShowRoute'
                 for route in sc.xpath(ext_xpath):
-                    print Introspect.routeToStr(indent, route, 'detail')
+                    print(Introspect.routeToStr(indent, route, 'detail'))
 
-                print ("aggregate_enable:%s\n" %
-                       (sc.find("aggregate_enable").text))
+                print(("aggregate_enable:%s\n" %
+                       (sc.find("aggregate_enable").text)))
 
     def showStaticRoute(self, xpathExpr, format, max_width, columns):
         if not columns:
@@ -533,11 +536,11 @@ class Introspect:
         for tree in self.output_etree:
             for entry in tree.xpath(xpathExpr):
                 if format == 'table':
-                    print 'ri_name: %s' % (entry.find('ri_name').text)
+                    print('ri_name: %s' % (entry.find('ri_name').text))
                     Introspect.dumpTbl(entry.xpath("//StaticRouteInfo"),
                                        max_width, columns)
                 else:
-                    print Introspect.elementToStr('', entry)
+                    print(Introspect.elementToStr('', entry))
 
 class CLI_basic(object):
     try:
@@ -1038,7 +1041,7 @@ class CLI_ctr(CLI_basic):
 
     def ShowMulticastManager(self, args):
         if args.type == 'tree' and not args.table:
-            print "ERROR: Table name is required with -t option"
+            print("ERROR: Table name is required with -t option")
             return
 
         if args.type == 'table':
@@ -1767,7 +1770,7 @@ class CLI_vr(CLI_basic):
             # when type is ifmap or all
             args.format = 'text'
             self.IST.get('Snh_AgentStatsReq')
-            xpath = '|'.join(StatsMap.values())
+            xpath = '|'.join(list(StatsMap.values()))
             self.output_formatters(args, xpath)
             self.IST.get('Snh_ShowIFMapAgentStatsReq')
             xpath = '//ShowIFMapAgentStatsResp'
@@ -1950,7 +1953,7 @@ def main():
     argv = sys.argv[1:]
 
     if '--version' in argv:
-        print version
+        print(version)
         sys.exit()
 
     host = os.environ.get('INTROSPECT_HOST', None)
@@ -1987,11 +1990,11 @@ def main():
         pass
 
     if filename and not os.path.isfile(filename):
-        print "Failed to find " + filename
+        print("Failed to find " + filename)
         sys.exit(1)
 
     if host:
-        print "Introspect Host: " + host
+        print("Introspect Host: " + host)
 
     global debug
     if '--debug' in argv:
@@ -2009,13 +2012,16 @@ def main():
 
     roleparsers = parser.add_subparsers()
 
-    for svc in sorted(ServiceMap.iterkeys()):
+    for svc in sorted(ServiceMap.keys()):
         p = roleparsers.add_parser(svc, help=ServiceMap[svc])
         if 'CLI_%s' % (svc) in globals():
             globals()['CLI_%s' % (svc)](p, host, port, filename)
 
     args, unknown = parser.parse_known_args()
-    args.func(args)
+    if ("func" in args):
+      args.func(args)
+    else:
+      parser.print_usage()
 
 if __name__ == "__main__":
     main()
