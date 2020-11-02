@@ -27,6 +27,7 @@ debug = False
 Default_Max_Width = 36
 proxy = None
 token = None
+ssl_enable = False
 
 ServiceMap = {
     "vr": "contrail-vrouter-agent",
@@ -52,6 +53,8 @@ class Introspect:
     def __init__ (self, host, port, filename):
 
         self.host_url = "http://" + host + ":" + str(port) + "/"
+        if (ssl_enable):
+            self.host_url = "https://" + host + ":" + str(port) + "/"
         self.filename = filename
 
     def get (self, path):
@@ -76,7 +79,7 @@ class Introspect:
                     headers['X-Auth-Token'] = token
                 if debug: print("DEBUG: retrieving url " + url)
                 try:
-                    response = requests.get(url,headers=headers)
+                    response = requests.get(url,headers=headers, verify=False)
                     response.raise_for_status()
                 except requests.exceptions.HTTPError:
                     print('The server couldn\'t fulfill the request.')
@@ -2000,6 +2003,10 @@ def main():
     if '--debug' in argv:
         debug = True
 
+    global ssl_enable
+    if '--ssl-enable' in argv:
+        ssl_enable = True
+
     parser = argparse.ArgumentParser(prog='ist',
         description='A script to make Contrail Introspect output CLI friendly.')
     parser.add_argument('--version',  action="store_true",  help="Script version")
@@ -2009,6 +2016,7 @@ def main():
     parser.add_argument('--proxy',    type=str,             help="Introspect proxy URL")
     parser.add_argument('--token',    type=str,             help="Token for introspect proxy requests")
     parser.add_argument('--file',     type=str,             help="Introspect file")
+    parser.add_argument('--ssl-enable',     action="store_true",             help="used when ssl is enabled on intropect url")
 
     roleparsers = parser.add_subparsers()
 
