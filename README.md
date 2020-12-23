@@ -8,6 +8,8 @@ When SSL is enabled we need to use SSL/TLS Client Authentication.  The modificat
 Alternatively use ```--key_file, --ca_file & --cert_file``` to pass as CLI arguments.  
 see ```ist.py --help``` for more details.
 
+If easyRSA (e.g. via juju charm) has been used to generate CA & certs for the introspect APIs, the ```set_ssl_envs``` file and the referenced certs & key can be generated with https://github.com/dannyvernals/contrail-gen-introspect-cert
+
 The rest of the README is verbatim from https://github.com/vcheny/contrail-introspect-cli
 
 ## Introduction
