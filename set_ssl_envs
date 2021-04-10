@@ -1,0 +1,3 @@
+export SSL_KEY_FILE="/etc/contrail/ssl/private/server-privkey.pem"
+export SSL_CA_FILE="/etc/contrail/ssl/certs/ca-cert.pem"
+export SSL_CERT_FILE="/etc/contrail/ssl/certs/server.pem"

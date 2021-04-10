@@ -49,9 +49,14 @@ ServiceMap = {
 }
 
 class Introspect:
-    def __init__ (self, host, port, filename):
-
-        self.host_url = "http://" + host + ":" + str(port) + "/"
+    def __init__ (self, host, port, filename, ssl_vars):
+        if ssl_vars["cert_file"]:
+            self.host_url = "https://" + host + ":" + str(port) + "/"
+            self.ssl_vars = ssl_vars
+            self.has_ssl = True
+        else:
+            self.host_url = "http://" + host + ":" + str(port) + "/"
+            self.has_ssl = False
         self.filename = filename
 
     def get (self, path):
@@ -76,7 +81,13 @@ class Introspect:
                     headers['X-Auth-Token'] = token
                 if debug: print("DEBUG: retrieving url " + url)
                 try:
-                    response = requests.get(url,headers=headers)
+                    if self.has_ssl:
+                        response = requests.get(url,headers=headers,
+                                                verify=self.ssl_vars["ca_file"], 
+                                                cert=(self.ssl_vars["cert_file"], self.ssl_vars["key_file"])
+                                                )
+                    else:
+                        response = requests.get(url,headers=headers)
                     response.raise_for_status()
                 except requests.exceptions.HTTPError:
                     print('The server couldn\'t fulfill the request.')
@@ -585,7 +596,7 @@ class CLI_basic(object):
     common_parser.add_argument('--max_width', type=int,
                                help="Max width per column")
 
-    def __init__(self, parser, host, port, filename):
+    def __init__(self, parser, host, port, filename, ssl_vars):
 
         host = host or '127.0.0.1'
         if port is None:
@@ -595,7 +606,7 @@ class CLI_basic(object):
             except:
                 port = self.IntrospectPortMap[ServiceMap[cli_type] + ':0']
 
-        self.IST = Introspect(host, port, filename)
+        self.IST = Introspect(host, port, filename, ssl_vars)
 
         self.subparser = parser.add_subparsers()
 
@@ -699,8 +710,8 @@ class CLI_nodemgr_analytics(CLI_basic):
 
 class CLI_cfg_schema(CLI_basic):
 
-    def __init__(self, parser, host, port, filename):
-        CLI_basic.__init__(self, parser, host, port, filename)
+    def __init__(self, parser, host, port, filename, ssl_vars):
+        CLI_basic.__init__(self, parser, host, port, filename, ssl_vars)
         self.add_parse_args()
 
     def add_parse_args(self):
@@ -763,8 +774,8 @@ class CLI_cfg_schema(CLI_basic):
 
 class CLI_cfg_svcmon(CLI_basic):
 
-    def __init__(self, parser, host, port, filename):
-        CLI_basic.__init__(self, parser, host, port, filename)
+    def __init__(self, parser, host, port, filename, ssl_vars):
+        CLI_basic.__init__(self, parser, host, port, filename, ssl_vars)
         self.add_parse_args()
 
     def add_parse_args(self):
@@ -785,8 +796,8 @@ class CLI_cfg_svcmon(CLI_basic):
 
 class CLI_ctr(CLI_basic):
 
-    def __init__(self, parser, host, port, filename):
-        CLI_basic.__init__(self, parser, host, port, filename)
+    def __init__(self, parser, host, port, filename, ssl_vars):
+        CLI_basic.__init__(self, parser, host, port, filename, ssl_vars)
         self.add_parse_args()
 
     def add_parse_args(self):
@@ -1305,8 +1316,8 @@ class CLI_ctr(CLI_basic):
         self.IST.showRoute_CTR(args.last, mode)
 
 class CLI_vr(CLI_basic):
-    def __init__(self, parser, host, port, filename):
-        CLI_basic.__init__(self, parser, host, port, filename)
+    def __init__(self, parser, host, port, filename, ssl_vars):
+        CLI_basic.__init__(self, parser, host, port, filename, ssl_vars)
         self.add_parse_args()
 
     def add_parse_args(self):
@@ -1846,8 +1857,8 @@ class CLI_vr(CLI_basic):
 
 class CLI_collector(CLI_basic):
 
-    def __init__(self, parser, host, port, filename):
-        CLI_basic.__init__(self, parser, host, port, filename)
+    def __init__(self, parser, host, port, filename, ssl_vars):
+        CLI_basic.__init__(self, parser, host, port, filename, ssl_vars)
         self.add_parse_args()
 
     def add_parse_args(self):
@@ -2000,22 +2011,38 @@ def main():
     if '--debug' in argv:
         debug = True
 
+    ssl_vars = dict()
+    try:
+        ssl_vars['key_file'] = argv[argv.index('--key_file') + 1]
+    except ValueError:
+        ssl_vars['key_file'] = os.environ.get('SSL_KEY_FILE', None)
+    try:
+        ssl_vars['ca_file'] = argv[argv.index('--ca_file') + 1]
+    except ValueError:
+        ssl_vars['ca_file'] = os.environ.get('SSL_CA_FILE', None)
+    try:
+        ssl_vars['cert_file'] = argv[argv.index('--cert_file') + 1]
+    except ValueError:
+        ssl_vars['cert_file'] = os.environ.get('SSL_CERT_FILE', None)
     parser = argparse.ArgumentParser(prog='ist',
         description='A script to make Contrail Introspect output CLI friendly.')
-    parser.add_argument('--version',  action="store_true",  help="Script version")
-    parser.add_argument('--debug',    action="store_true",  help="Verbose mode")
-    parser.add_argument('--host',     type=str,             help="Introspect host address. Default: localhost")
-    parser.add_argument('--port',     type=int,             help="Introspect port number")
-    parser.add_argument('--proxy',    type=str,             help="Introspect proxy URL")
-    parser.add_argument('--token',    type=str,             help="Token for introspect proxy requests")
-    parser.add_argument('--file',     type=str,             help="Introspect file")
+    parser.add_argument('--version',   action="store_true",  help="Script version")
+    parser.add_argument('--debug',     action="store_true",  help="Verbose mode")
+    parser.add_argument('--host',      type=str,             help="Introspect host address. Default: localhost")
+    parser.add_argument('--port',      type=int,             help="Introspect port number")
+    parser.add_argument('--proxy',     type=str,             help="Introspect proxy URL")
+    parser.add_argument('--token',     type=str,             help="Token for introspect proxy requests")
+    parser.add_argument('--file',      type=str,             help="Introspect file")
+    parser.add_argument('--key_file',  type=str,             help="SSL key file, alternatively set SSL_KEY_FILE env var")
+    parser.add_argument('--ca_file',   type=str,             help="SSL ca file, alternatively set SSL_CA_FILE env var")
+    parser.add_argument('--cert_file', type=str,             help="SSL cert file, alternatively set SSL_CERT_FILE env var")
 
     roleparsers = parser.add_subparsers()
 
     for svc in sorted(ServiceMap.keys()):
         p = roleparsers.add_parser(svc, help=ServiceMap[svc])
         if 'CLI_%s' % (svc) in globals():
-            globals()['CLI_%s' % (svc)](p, host, port, filename)
+            globals()['CLI_%s' % (svc)](p, host, port, filename, ssl_vars)
 
     args, unknown = parser.parse_known_args()
     if ("func" in args):
